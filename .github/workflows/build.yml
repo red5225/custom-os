@@ -23,7 +23,7 @@ jobs:
         run: |
           set -eux
           sudo apt-get update
-          sudo apt-get install -y build-essential gcc-multilib nasm binutils grub-pc-bin grub-common xorriso mtools
+          sudo apt-get install -y build-essential gcc-multilib nasm binutils grub-pc-bin grub-common grub-efi-amd64-bin xorriso mtools
 
       - name: Build ISO
         run: |
@@ -37,6 +37,7 @@ jobs:
           test -s build/custom-os.iso
           ls -lh build/custom-os.iso
           file build/custom-os.iso
+          xorriso -indev build/custom-os.iso -report_el_torito plain
 
       - name: Upload ISO
         uses: actions/upload-artifact@v4
