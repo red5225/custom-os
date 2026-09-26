@@ -19,13 +19,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build tools
+      - name: Install BIOS build tools
         run: |
           set -eux
           sudo apt-get update
-          sudo apt-get install -y build-essential gcc-multilib nasm binutils grub-pc-bin grub-common grub-efi-amd64-bin xorriso mtools
+          sudo apt-get install -y build-essential gcc-multilib nasm binutils grub-pc-bin grub-common xorriso mtools
 
-      - name: Build ISO
+      - name: Build BIOS ISO
         run: |
           set -eux
           make clean
