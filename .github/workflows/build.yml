@@ -2,30 +2,43 @@ name: Build custom-os
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
   pull_request:
-    branches: ["main"]
+    branches:
+      - main
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build dependencies
+      - name: Install OS build toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y nasm gcc binutils grub-pc-bin grub-common xorriso
+          sudo apt-get install -y build-essential gcc-multilib nasm binutils grub-pc-bin grub-common xorriso
+
+      - name: Show tool versions
+        run: |
+          gcc --version
+          nasm -version
+          ld --version | head -n 1
+          grub-mkrescue --version
 
       - name: Build ISO
-        run: make
+        run: make clean && make
 
       - name: Verify ISO
         run: |
-          test -f build/custom-os.iso
+          test -s build/custom-os.iso
           file build/custom-os.iso
 
       - name: Upload ISO artifact
