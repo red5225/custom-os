@@ -1,105 +1,77 @@
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
-typedef unsigned int uint32_t;
 
 enum { W = 80, H = 25 };
 static volatile uint16_t *const VGA = (uint16_t *)0xB8000;
-static int row, col;
-static uint8_t color = 0x07;
 
-static void clear(void) {
-    for (int y = 0; y < H; y++)
-        for (int x = 0; x < W; x++)
-            VGA[y * W + x] = (uint16_t)' ' | ((uint16_t)color << 8);
-    row = 0;
-    col = 0;
+static void putc_at(int x, int y, char c, uint8_t cc) {
+    if (x >= 0 && x < W && y >= 0 && y < H)
+        VGA[y * W + x] = (uint16_t)(unsigned char)c | ((uint16_t)cc << 8);
 }
 
-static void set_color(uint8_t c) { color = c; }
+static void text_at(int x, int y, const char *s, uint8_t cc) {
+    while (*s && x < W) putc_at(x++, y, *s++, cc);
+}
 
-static void putc(char c) {
-    if (c == '\n') {
-        col = 0;
-        row++;
-        return;
+static void fill(int x, int y, int w, int h, char c, uint8_t cc) {
+    for (int yy = y; yy < y + h && yy < H; yy++)
+        for (int xx = x; xx < x + w && xx < W; xx++)
+            putc_at(xx, yy, c, cc);
+}
+
+static void box(int x, int y, int w, int h, uint8_t cc) {
+    for (int i = 0; i < w; i++) {
+        putc_at(x+i,y,'-',cc); putc_at(x+i,y+h-1,'-',cc);
     }
-    if (row >= H) return;
-    if (col >= W) {
-        col = 0;
-        row++;
-        if (row >= H) return;
+    for (int i = 0; i < h; i++) {
+        putc_at(x,y+i,'|',cc); putc_at(x+w-1,y+i,'|',cc);
     }
-    VGA[row * W + col] = (uint16_t)(unsigned char)c | ((uint16_t)color << 8);
-    col++;
-}
-
-static void print(const char *s) {
-    while (*s) putc(*s++);
-}
-
-static void line(char c) {
-    for (int i = 0; i < W; i++) putc(c);
-}
-
-static void centered(const char *s) {
-    int n = 0;
-    while (s[n]) n++;
-    col = (n < W) ? (W - n) / 2 : 0;
-    print(s);
-}
-
-static void panel(const char *title, const char *value, uint8_t title_color) {
-    set_color(title_color);
-    print("  ");
-    print(title);
-    set_color(0x07);
-    print(": ");
-    print(value);
-    print("\n");
+    putc_at(x,y,'+',cc); putc_at(x+w-1,y,'+',cc);
+    putc_at(x,y+h-1,'+',cc); putc_at(x+w-1,y+h-1,'+',cc);
 }
 
 void kmain(unsigned long magic, unsigned long multiboot_info) {
     (void)multiboot_info;
 
-    clear();
+    fill(0,0,W,H,' ',0x17);
 
-    set_color(0x0B);
-    line('=');
-    set_color(0x0F);
-    centered("CUSTOM-OS");
-    set_color(0x0B);
-    line('=');
+    /* Top menu bar */
+    fill(0,0,W,2,' ',0x70);
+    text_at(2,0,"custom-os",0x7F);
+    text_at(18,0,"File",0x7F);
+    text_at(24,0,"Edit",0x7F);
+    text_at(30,0,"View",0x7F);
+    text_at(37,0,"Window",0x7F);
+    text_at(46,0,"Help",0x7F);
+    text_at(67,0,"WiFi",0x7F);
+    text_at(73,0,"100%",0x7F);
 
-    set_color(0x07);
-    print("\n");
-    set_color(0x0A);
-    centered("SYSTEM ONLINE");
-    set_color(0x07);
-    print("\n\n");
+    /* Main window */
+    fill(8,4,64,14,' ',0x17);
+    box(8,4,64,14,0x71);
+    fill(9,5,62,2,' ',0x70);
+    putc_at(12,6,'o',0x74);
+    putc_at(15,6,'o',0x76);
+    putc_at(18,6,'o',0x72);
+    text_at(31,6,"About custom-os",0x7F);
 
-    panel("STATUS", "Running", 0x0A);
-    panel("KERNEL", "custom-os 0.1", 0x0B);
-    panel("ARCH", "i686 / 32-bit x86", 0x0B);
-    panel("DISPLAY", "VGA text console", 0x0B);
-    panel("BOOT", magic == 0x2BADB002UL ? "Multiboot OK" : "Multiboot ERROR", 0x0A);
+    text_at(13,9,"CUSTOM-OS",0x7B);
+    text_at(13,10,"A tiny 32-bit desktop kernel",0x7F);
+    text_at(13,12,"Status",0x70);
+    text_at(30,12,"ONLINE",0x7A);
+    text_at(13,13,"Architecture",0x70);
+    text_at(30,13,"x86 / 32-bit",0x7F);
+    text_at(13,14,"Boot",0x70);
+    text_at(30,14,magic==0x2BADB002UL?"MULTIBOOT OK":"MULTIBOOT ERROR",0x7A);
+    text_at(13,16,"Built for UTM",0x7F);
 
-    print("\n");
-    set_color(0x0E);
-    print("  +----------------------------------------------------------+\n");
-    print("  |                         MAIN MENU                        |\n");
-    print("  +----------------------------------------------------------+\n");
-    set_color(0x07);
-    print("  |  [1] System information                                 |\n");
-    print("  |  [2] Hardware status                                    |\n");
-    print("  |  [3] Kernel console                                     |\n");
-    print("  |  [4] Reboot                                             |\n");
-    print("  +----------------------------------------------------------+\n");
+    /* Dock */
+    fill(21,20,38,4,' ',0x70);
+    box(21,20,38,4,0x71);
+    text_at(25,21,"[Finder]",0x7B);
+    text_at(36,21,"[Term]",0x7A);
+    text_at(46,21,"[Info]",0x7E);
+    text_at(54,21,"[OS]",0x7F);
 
-    print("\n");
-    set_color(0x08);
-    print("  Waiting for keyboard input...");
-    set_color(0x07);
-
-    for (;;)
-        __asm__ volatile ("hlt");
+    for (;;) __asm__ volatile ("hlt");
 }
