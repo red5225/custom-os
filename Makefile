@@ -1,4 +1,3 @@
-TARGET := i686-elf
 BUILD := build
 
 CFLAGS := -m32 -ffreestanding -fno-pie -fno-stack-protector -Wall -Wextra -O2
@@ -19,6 +18,7 @@ $(BUILD)/custom-os.bin: $(BUILD)/boot.o $(BUILD)/kernel.o linker.ld
 	ld $(LDFLAGS) -o $@ $(BUILD)/boot.o $(BUILD)/kernel.o
 
 $(BUILD)/iso: $(BUILD)/custom-os.bin grub/grub.cfg | $(BUILD)
+	rm -rf $(BUILD)/iso
 	mkdir -p $(BUILD)/iso/boot/grub
 	cp $(BUILD)/custom-os.bin $(BUILD)/iso/boot/custom-os.bin
 	cp grub/grub.cfg $(BUILD)/iso/boot/grub/grub.cfg
