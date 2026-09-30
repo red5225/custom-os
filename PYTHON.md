@@ -1,0 +1,1 @@
+Python 3.14 is included by default. The build downloads python3.14.tcz and its Tiny Core dependencies, places them in tce/optional, and marks them OnBoot. The CD boot configuration uses tinycore tce=sr0 so Python loads automatically. After booting, python3 --version should report Python 3.14.x.

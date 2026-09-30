@@ -13,7 +13,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build from proven Tiny Core base
+      - name: Install ISO tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorriso
+
+      - name: Build custom OS with Python
         run: |
           make clean
           make
@@ -30,7 +35,7 @@ jobs:
             echo "QEMU exited unexpectedly with code $rc"
             exit 1
           fi
-          echo "Tiny Core ISO stayed running for 12 seconds: boot smoke test passed"
+          echo "Custom OS ISO stayed running for 12 seconds: boot smoke test passed"
 
       - name: Upload ISO
         uses: actions/upload-artifact@v4
