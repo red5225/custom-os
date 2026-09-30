@@ -29,7 +29,7 @@ jobs:
       - name: Configure tiny Linux
         working-directory: buildroot
         run: |
-          make qemu_x86_defconfig
+          make qemu_x86_64_defconfig
           cat >> .config <<'EOF'
           BR2_TARGET_ROOTFS_ISO9660=y
           BR2_TARGET_ROOTFS_ISO9660_GRUB2=y
@@ -60,7 +60,7 @@ jobs:
       - name: Boot smoke test with QEMU
         run: |
           set +e
-          timeout 12s qemu-system-i386 -cdrom buildroot/output/images/rootfs.iso9660 -boot d -display none -monitor none -serial stdio -no-reboot -no-shutdown > qemu.log 2>&1
+          timeout 12s qemu-system-x86_64 -cdrom buildroot/output/images/rootfs.iso9660 -boot d -display none -monitor none -serial stdio -no-reboot -no-shutdown > qemu.log 2>&1
           rc=$?
           set -e
           cat qemu.log
