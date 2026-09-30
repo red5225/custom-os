@@ -11,9 +11,14 @@ $(BUILD):
 $(BUILD)/boot.bin: src/boot.asm | $(BUILD)
 	nasm -f bin src/boot.asm -o $(BUILD)/boot.bin
 
-$(BUILD)/kernel.bin: src/kernel.c | $(BUILD)
-	$(CC) -m32 -march=i686 -ffreestanding -fno-pie -fno-stack-protector -fno-builtin -nostdlib -nostartfiles -nodefaultlibs -c src/kernel.c -o $(BUILD)/kernel.o
-	$(LD) -m elf_i386 -Ttext 0x10000 --oformat elf32-i386 -o $(BUILD)/kernel.elf $(BUILD)/kernel.o
+$(BUILD)/kernel_entry.o: src/kernel_entry.asm | $(BUILD)
+	nasm -f elf32 src/kernel_entry.asm -o $(BUILD)/kernel_entry.o
+
+$(BUILD)/kernel.o: src/kernel.c | $(BUILD)
+	$(CC) -m32 -march=i686 -ffreestanding -fno-pie -fno-stack-protector -fno-builtin -nostdlib -nodefaultlibs -nostartfiles -c src/kernel.c -o $(BUILD)/kernel.o
+
+$(BUILD)/kernel.bin: $(BUILD)/kernel_entry.o $(BUILD)/kernel.o linker.ld
+	$(LD) -m elf_i386 -T linker.ld -o $(BUILD)/kernel.elf $(BUILD)/kernel_entry.o $(BUILD)/kernel.o
 	$(OBJCOPY) -O binary $(BUILD)/kernel.elf $(BUILD)/kernel.bin
 	@test $$(stat -c%s $(BUILD)/kernel.bin) -le 8192 || (echo "Kernel is larger than 8192 bytes; bootloader reads only 16 sectors" && exit 1)
 
