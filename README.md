@@ -1,37 +1,12 @@
-# custom-os
+# Custom OS
 
-A small low-level x86 operating system designed to build into a bootable image for UTM.
-
-## Goal
-
-Build a tiny 32-bit x86 kernel and boot it in UTM using a bootable ISO image.
-
-## Requirements
-
-- NASM
-- GCC with 32-bit support
-- GNU binutils
-- GRUB tooling (`grub-mkrescue`)
-- xorriso
-- UTM
+A tiny x86 operating system built for UTM SE. GitHub Actions builds a bootable ISO automatically.
 
 ## Build
+Push to `main` or run the **Build OS** workflow manually. The ISO is uploaded as a workflow artifact.
 
-Run:
+## Current UI
+A 320x200 VGA-mode desktop with a dark background, top bar, launcher, clock placeholder, and simple cards. No userspace or Linux dependency.
 
-```sh
-make
-```
-
-The resulting `build/custom-os.iso` can be attached to a UTM virtual machine.
-
-## Project layout
-
-- `boot/` — Multiboot-compatible boot entry
-- `kernel/` — C kernel code
-- `linker.ld` — kernel linker script
-- `Makefile` — build and ISO creation
-- `grub/` — GRUB configuration
-- `build/` — generated files (ignored by Git)
-
-This is an educational OS project and intentionally starts small.
+## UTM SE
+Create an x86 PC VM and attach the generated ISO as the optical disk. Boot from the ISO.

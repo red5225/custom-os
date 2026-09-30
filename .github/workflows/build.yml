@@ -1,48 +1,32 @@
-name: Build custom-os
+name: Build OS
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Install BIOS build tools
+      - name: Install toolchain
         run: |
-          set -eux
           sudo apt-get update
-          sudo apt-get install -y build-essential gcc-multilib nasm binutils grub-pc-bin grub-common xorriso mtools
-
-      - name: Build BIOS ISO
+          sudo apt-get install -y nasm gcc-i686-linux-gnu binutils-i686-linux-gnu genisoimage
+      - name: Build
         run: |
-          set -eux
-          make clean
           make
-
-      - name: Verify ISO
-        run: |
-          set -eux
-          test -s build/custom-os.iso
-          ls -lh build/custom-os.iso
-          file build/custom-os.iso
-          xorriso -indev build/custom-os.iso -report_el_torito plain
-
+          file build/os.iso
+          ls -lh build/os.iso
       - name: Upload ISO
         uses: actions/upload-artifact@v4
         with:
           name: custom-os-iso
-          path: build/custom-os.iso
-          if-no-files-found: error
-          retention-days: 30
+          path: build/os.iso
+      - name: Upload raw disk image
+        uses: actions/upload-artifact@v4
+        with:
+          name: custom-os-raw
+          path: build/os.img
