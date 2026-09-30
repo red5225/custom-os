@@ -29,22 +29,11 @@ jobs:
       - name: Configure tiny Linux
         working-directory: buildroot
         run: |
-          make allnoconfig
+          cp configs/qemu_x86_defconfig .config
           cat >> .config <<'EOF'
-          BR2_i386=y
-          BR2_TOOLCHAIN_BUILDROOT=y
-          BR2_TOOLCHAIN_BUILDROOT_MUSL=y
-          BR2_KERNEL_HEADERS_AS_KERNEL=y
-          BR2_LINUX_KERNEL=y
-          BR2_LINUX_KERNEL_USE_ARCH_DEFAULT_CONFIG=y
-          BR2_LINUX_KERNEL_BZIMAGE=y
-          BR2_PACKAGE_BUSYBOX=y
-          BR2_INIT_BUSYBOX=y
-          BR2_ROOTFS_DEVICE_CREATION_DYNAMIC_DEVTMPFS=y
-          BR2_TARGET_GENERIC_GETTY=y
+          BR2_ROOTFS_OVERLAY="board/custom/rootfs_overlay"
           BR2_TARGET_GENERIC_GETTY_PORT="tty1"
           BR2_TARGET_GENERIC_GETTY_BAUDRATE_0="115200"
-          BR2_ROOTFS_OVERLAY="board/custom/rootfs_overlay"
           BR2_TARGET_ROOTFS_CPIO=y
           BR2_TARGET_ROOTFS_CPIO_GZIP=y
           BR2_TARGET_ROOTFS_ISO9660=y
@@ -54,7 +43,7 @@ jobs:
           BR2_TARGET_GRUB2_I386_PC=y
           EOF
           make olddefconfig
-          grep -E '^(BR2_i386|BR2_LINUX_KERNEL|BR2_TARGET_ROOTFS_ISO9660|BR2_TARGET_GRUB2|BR2_ROOTFS_OVERLAY)' .config
+          grep -E '^(BR2_i386|BR2_LINUX_KERNEL|BR2_PACKAGE_BUSYBOX|BR2_TARGET_ROOTFS_ISO9660|BR2_TARGET_GRUB2|BR2_ROOTFS_OVERLAY)' .config
 
       - name: Build Linux OS
         working-directory: buildroot
