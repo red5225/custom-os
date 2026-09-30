@@ -3,10 +3,11 @@ ENTRY(start)
 
 SECTIONS
 {
-    . = 0x10000;
+    . = 0x00100000;
 
     .text : ALIGN(4)
     {
+        *(.multiboot)
         *(.text.start)
         *(.text)
     }
