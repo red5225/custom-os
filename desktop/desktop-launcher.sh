@@ -1,0 +1,1 @@
+#!/bin/sh\n# Custom OS launcher placeholder for the graphical shell.\n# This will become the main app launcher as the desktop grows.\nif command -v aterm >/dev/null 2>&1; then\n  aterm -title 'Custom OS' -geometry 90x28 &\nfi\n

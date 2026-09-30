@@ -1,0 +1,1 @@
+# Custom OS Desktop\n\nThe next UI layer is built on Tiny Core's X stack. It provides a graphical desktop, launcher, terminal, and custom branding for UTM on Intel Macs.\n\nThis is the first desktop milestone; applications and a richer shell can be added on top of it.
