@@ -25,7 +25,8 @@ $(BUILD)/os.iso: $(BUILD)/Core-17.1.iso scripts/fetch_tcz.py scripts/make_wallpa
 	cp $(BUILD)/tcz/*.tcz $(BUILD)/iso-root/tce/optional/
 	(cd $(BUILD)/tcz && ls -1 *.tcz) > $(BUILD)/iso-root/tce/onboot.lst
 	mkdir -p $(BUILD)/initrd-root
-	gunzip -c $(BUILD)/iso-root/boot/core.gz | (cd $(BUILD)/initrd-root && cpio -idm --quiet)
+	gunzip -c $(BUILD)/iso-root/boot/core.gz | (cd $(BUILD)/initrd-root && sudo cpio -idm --quiet)
+	sudo chown -R $$(id -u):$$(id -g) $(BUILD)/initrd-root
 	chmod -R u+rwX $(BUILD)/initrd-root
 	cp -a board/custom/rootfs_overlay/. $(BUILD)/initrd-root/
 	mkdir -p $(BUILD)/initrd-root/usr/local/bin $(BUILD)/initrd-root/usr/local/share/custom-os $(BUILD)/initrd-root/opt/backgrounds $(BUILD)/initrd-root/home/tc/.X.d
@@ -38,7 +39,7 @@ $(BUILD)/os.iso: $(BUILD)/Core-17.1.iso scripts/fetch_tcz.py scripts/make_wallpa
 	cp desktop/xinit-custom $(BUILD)/initrd-root/home/tc/.X.d/custom-os
 	chmod +x $(BUILD)/initrd-root/usr/local/bin/start-desktop $(BUILD)/initrd-root/usr/local/bin/custom-launcher $(BUILD)/initrd-root/usr/local/bin/custom-login-banner $(BUILD)/initrd-root/home/tc/.X.d/custom-os
 	cd $(BUILD)/initrd-root && find . -print | cpio -o -H newc --quiet | gzip -9 > ../iso-root/boot/core.gz
-	for cfg in $(BUILD)/iso-root/boot/isolinux/isolinux.cfg $(BUILD)/iso-root/boot/isolinux/*.cfg; do [ -f "$$cfg" ] || continue; sed -i 's#tce=sr0#tce=sr0 bkg=custom-os.png#g' "$$cfg"; sed -i '1i MENU TITLE CUSTOM OS | Intel x86\nMENU BACKGROUND custom-os.png' "$$cfg"; done
+	for cfg in $(BUILD)/iso-root/boot/isolinux/isolinux.cfg $(BUILD)/iso-root/boot/isolinux/*.cfg; do [ -f "$$cfg" ] || continue; sed -i 's#tce=sr0#tce=sr0 bkg=custom-os.png#g' "$$cfg"; sed -i '1i MENU TITLE CUSTOM OS | Intel x86' "$$cfg"; done
 	rm -f $@
 	xorriso -as mkisofs -l -J -R -V CUSTOMOS -no-emul-boot -boot-load-size 4 -boot-info-table -b boot/isolinux/isolinux.bin -c boot/isolinux/boot.cat -o $@ $(BUILD)/iso-root
 
