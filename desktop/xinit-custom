@@ -1,0 +1,2 @@
+#!/bin/sh
+/usr/local/bin/start-desktop >/tmp/custom-os-session.log 2>&1 &

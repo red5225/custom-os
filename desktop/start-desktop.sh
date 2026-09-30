@@ -1,1 +1,16 @@
-#!/bin/sh\n# Start the Custom OS graphical session.\nexport DISPLAY=:0\nexport XDG_CURRENT_DESKTOP=CustomOS\nexport HOME=/home/tc\nmkdir -p "$HOME/.jwm" "$HOME/.config/custom-os"\n\n# Start the framebuffer X server when available.\nif command -v Xfbdev >/dev/null 2>&1; then\n  Xfbdev :0 -screen 0 1024x768x32 -ac >/tmp/custom-os-x.log 2>&1 &\nelif command -v Xorg >/dev/null 2>&1; then\n  Xorg :0 -nolisten tcp >/tmp/custom-os-x.log 2>&1 &\nelse\n  echo 'Graphical server is not installed.'\n  exit 1\nfi\n\nsleep 2\n\nif command -v jwm >/dev/null 2>&1; then\n  jwm >/tmp/custom-os-jwm.log 2>&1 &\nfi\n\n# Give the user a clean first screen.\nif command -v aterm >/dev/null 2>&1; then\n  aterm -title 'Custom OS Terminal' -geometry 100x30+40+40 &\nfi\n\nwait\n
+#!/bin/sh
+export DISPLAY=:0
+export XDG_CURRENT_DESKTOP=CustomOS
+export HOME=/home/tc
+mkdir -p "$HOME/.jwm"
+if ! xdpyinfo >/dev/null 2>&1; then
+  if command -v Xfbdev >/dev/null 2>&1; then
+    Xfbdev :0 -screen 0 1024x768x32 -nolisten tcp >/tmp/custom-os-x.log 2>&1 &
+  elif command -v Xorg >/dev/null 2>&1; then
+    Xorg :0 -nolisten tcp >/tmp/custom-os-x.log 2>&1 &
+  else
+    exit 1
+  fi
+  sleep 2
+fi
+jwm >/tmp/custom-os-jwm.log 2>&1 &
