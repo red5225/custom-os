@@ -1,1 +1,36 @@
-name: Build OS\n\non:\n  push:\n    branches: [ main ]\n  workflow_dispatch:\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    timeout-minutes: 12\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Install ISO build tools\n        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends xorriso cpio\n\n      - name: Build custom OS desktop\n        run: |\n          make clean\n          make\n          file build/os.iso\n          ls -lh build/os.iso\n          test -f build/iso-root/tce/optional/python3.14.tcz\n          test -f build/iso-root/tce/optional/Xfbdev.tcz\n          test -f build/iso-root/tce/optional/jwm.tcz\n          test -f build/iso-root/tce/optional/aterm.tcz\n          xorriso -indev build/os.iso -toc\n\n      - name: Upload ISO\n        uses: actions/upload-artifact@v4\n        with:\n          name: custom-os-iso\n          path: build/os.iso\n
+name: Build OS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ISO build tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends xorriso cpio
+
+      - name: Build custom OS desktop
+        run: |
+          make clean
+          make
+          file build/os.iso
+          ls -lh build/os.iso
+          test -f build/iso-root/tce/optional/python3.14.tcz
+          test -f build/iso-root/tce/optional/Xfbdev.tcz
+          test -f build/iso-root/tce/optional/jwm.tcz
+          test -f build/iso-root/tce/optional/aterm.tcz
+          test -f build/initrd-root/opt/backgrounds/custom-os.png
+          xorriso -indev build/os.iso -toc
+
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: custom-os-iso
+          path: build/os.iso
