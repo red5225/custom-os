@@ -8,79 +8,49 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 5
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install host build tools
+      - name: Install build tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential bc bison flex libssl-dev cpio rsync unzip wget file libncurses-dev python3 qemu-system-x86 grub-pc-bin xorriso
+          sudo apt-get install -y nasm gcc-i686-linux-gnu binutils-i686-linux-gnu genisoimage file qemu-system-x86
 
-      - name: Download Buildroot
+      - name: Build OS
         run: |
-          wget -q https://buildroot.org/downloads/buildroot-2026.08.tar.xz
-          tar -xf buildroot-2026.08.tar.xz
-          mv buildroot-2026.08 buildroot
-          mkdir -p buildroot/board/custom
-          cp -a board/custom/. buildroot/board/custom/
-          chmod +x buildroot/board/custom/rootfs_overlay/etc/init.d/S99custom
+          make clean
+          make
+          file build/os.iso build/os.img build/kernel.bin
+          ls -lh build/os.iso build/os.img build/kernel.bin
 
-      - name: Configure tiny Linux
-        working-directory: buildroot
+      - name: Validate boot sector
         run: |
-          cp configs/qemu_x86_defconfig .config
-          cat >> .config <<'EOF'
-          BR2_ROOTFS_OVERLAY="board/custom/rootfs_overlay"
-          BR2_TARGET_GENERIC_GETTY_PORT="tty1"
-          BR2_TARGET_GENERIC_GETTY_BAUDRATE_0="115200"
-          BR2_TARGET_ROOTFS_CPIO=y
-          BR2_TARGET_ROOTFS_CPIO_GZIP=y
-          BR2_TARGET_ROOTFS_ISO9660=y
-          BR2_TARGET_ROOTFS_ISO9660_GRUB2=y
-          BR2_TARGET_ROOTFS_ISO9660_INITRD=y
-          BR2_TARGET_GRUB2=y
-          BR2_TARGET_GRUB2_I386_PC=y
-          EOF
-          make olddefconfig
-          grep -E '^(BR2_i386|BR2_LINUX_KERNEL|BR2_PACKAGE_BUSYBOX|BR2_TARGET_ROOTFS_ISO9660|BR2_TARGET_GRUB2|BR2_ROOTFS_OVERLAY)' .config
+          test "$(xxd -p -s 510 -l 2 build/boot.bin)" = "55aa"
+          echo "BIOS boot signature OK"
 
-      - name: Build Linux OS
-        working-directory: buildroot
-        run: make -j2
-
-      - name: Validate artifacts
-        run: |
-          test -s buildroot/output/images/bzImage
-          test -s buildroot/output/images/rootfs.iso9660
-          file buildroot/output/images/bzImage
-          file buildroot/output/images/rootfs.iso9660
-          ls -lh buildroot/output/images/bzImage buildroot/output/images/rootfs.iso9660
-
-      - name: Boot smoke test with QEMU
+      - name: Smoke-test ISO with QEMU
         run: |
           set +e
-          timeout 15s qemu-system-i386             -machine pc-i440fx             -cdrom buildroot/output/images/rootfs.iso9660             -boot d             -display none             -monitor none             -serial stdio             -no-reboot             -no-shutdown > qemu.log 2>&1
+          timeout 8s qemu-system-i386 -cdrom build/os.iso -boot d -display none -monitor none -serial none -no-reboot -no-shutdown
           rc=$?
           set -e
-          cat qemu.log
           if [ "$rc" -ne 124 ]; then
             echo "QEMU exited unexpectedly with code $rc"
             exit 1
           fi
-          grep -E "Linux version|Custom OS|Buildroot|login:" qemu.log || true
-          echo "QEMU stayed alive for 15 seconds: BIOS Linux ISO smoke test passed"
+          echo "QEMU stayed running for 8 seconds: ISO boot smoke test passed"
 
       - name: Upload ISO
         uses: actions/upload-artifact@v4
         with:
-          name: custom-os-linux-iso
-          path: buildroot/output/images/rootfs.iso9660
+          name: custom-os-iso
+          path: build/os.iso
 
-      - name: Upload kernel
+      - name: Upload raw disk image
         uses: actions/upload-artifact@v4
         with:
-          name: custom-os-linux-kernel
-          path: buildroot/output/images/bzImage
+          name: custom-os-raw
+          path: build/os.img
