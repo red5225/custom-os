@@ -13,10 +13,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install ISO tools
+      - name: Install ISO and VM tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y xorriso
+          sudo apt-get install -y xorriso qemu-system-x86
 
       - name: Build custom OS with Python
         run: |
@@ -24,6 +24,8 @@ jobs:
           make
           file build/os.iso
           ls -lh build/os.iso
+          test -f build/iso-root/tce/optional/python3.14.tcz
+          grep -qx 'python3.14.tcz' build/iso-root/tce/onboot.lst
 
       - name: Smoke-test ISO with QEMU
         run: |
