@@ -10,13 +10,9 @@ start:
     mov sp, 0x7C00
     mov [boot_drive], dl
 
-    ; Set 320x200 256-color VGA mode.
     mov ax, 0x0013
     int 0x10
 
-    ; Read the kernel from LBA 1 using BIOS INT 13h extensions.
-    ; This works with UTM's El Torito CD/ISO boot drive as well as
-    ; normal BIOS disk emulation.
     mov si, disk_address_packet
     mov dl, [boot_drive]
     mov ah, 0x42
