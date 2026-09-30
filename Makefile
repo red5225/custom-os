@@ -11,7 +11,7 @@ $(BUILD):
 
 $(BUILD)/Core-17.1.iso: | $(BUILD)
 	wget -c --tries=20 --timeout=20 --waitretry=2 $(CORE_URL) -O $(BUILD)/Core-17.1.iso
-	printf '%s  %s\\n' '$(CORE_SHA256)' '$(BUILD)/Core-17.1.iso' | sha256sum -c -
+	printf '%s  %s\n' '$(CORE_SHA256)' '$(BUILD)/Core-17.1.iso' | sha256sum -c -
 
 $(BUILD)/os.iso: $(BUILD)/Core-17.1.iso
 	rm -rf $(BUILD)/iso-root $(BUILD)/tcz
@@ -19,26 +19,27 @@ $(BUILD)/os.iso: $(BUILD)/Core-17.1.iso
 	xorriso -osirrox on -indev $(BUILD)/Core-17.1.iso -extract / $(BUILD)/iso-root
 	chmod -R u+rwX $(BUILD)/iso-root
 	cd $(BUILD)/tcz && wget -c --tries=20 --timeout=20 --waitretry=2 $(TCZ_BASE)/$(PYTHON_TCZ) $(TCZ_BASE)/$(PYTHON_TCZ).dep
-	@set -e; \\
-	cd $(BUILD)/tcz; \\
-	download_deps() { \\
-	  f="$$1"; \\
-	  [ -f "$$f.dep" ] || return 0; \\
-	  while read -r dep; do \\
-	    [ -z "$$dep" ] && continue; \\
-	    if [ ! -f "$$dep" ]; then wget -q --tries=20 --timeout=20 --waitretry=2 "$(TCZ_BASE)/$$dep"; fi; \\
-	    if [ ! -f "$$dep.dep" ]; then wget -q --tries=20 --timeout=20 --waitretry=2 "$(TCZ_BASE)/$$dep.dep" || true; fi; \\
-	    download_deps "$$dep"; \\
-	  done < "$$f.dep"; \\
-	}; \\
+	@set -e; \
+	cd $(BUILD)/tcz; \
+	download_deps() { \
+	  f="$$1"; \
+	  [ -f "$$f.dep" ] || return 0; \
+	  while read -r dep; do \
+	    [ -z "$$dep" ] && continue; \
+	    case "$$dep" in #*) continue;; esac; \
+	    if [ ! -f "$$dep" ]; then wget -q --tries=20 --timeout=20 --waitretry=2 "$(TCZ_BASE)/$$dep"; fi; \
+	    if [ ! -f "$$dep.dep" ]; then wget -q --tries=20 --timeout=20 --waitretry=2 "$(TCZ_BASE)/$$dep.dep" || true; fi; \
+	    download_deps "$$dep"; \
+	  done < "$$f.dep"; \
+	}; \
 	download_deps "$(PYTHON_TCZ)"
 	mkdir -p $(BUILD)/iso-root/tce/optional
 	cp $(BUILD)/tcz/*.tcz $(BUILD)/iso-root/tce/optional/
-printf '%s\\n' $$(cd $(BUILD)/tcz && ls -1 *.tcz) > $(BUILD)/iso-root/tce/onboot.lst
-	@set -e; \\
-	for cfg in $(BUILD)/iso-root/boot/isolinux/isolinux.cfg $(BUILD)/iso-root/boot/isolinux/*.cfg; do \\
-	  [ -f "$$cfg" ] || continue; \\
-	  sed -i 's/append /append tinycore tce=sr0 /' "$$cfg"; \\
+	printf '%s\n' $$(cd $(BUILD)/tcz && ls -1 *.tcz) > $(BUILD)/iso-root/tce/onboot.lst
+	@set -e; \
+	for cfg in $(BUILD)/iso-root/boot/isolinux/isolinux.cfg $(BUILD)/iso-root/boot/isolinux/*.cfg; do \
+	  [ -f "$$cfg" ] || continue; \
+	  sed -i 's/append /append tinycore tce=sr0 /' "$$cfg"; \
 	done
 	rm -f $(BUILD)/os.iso
 	xorriso -as mkisofs -l -J -R -V CUSTOMOS -no-emul-boot -boot-load-size 4 -boot-info-table -b boot/isolinux/isolinux.bin -c boot/isolinux/boot.cat -o $(BUILD)/os.iso $(BUILD)/iso-root
