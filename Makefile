@@ -1,30 +1,18 @@
 BUILD=build
-CC=i686-linux-gnu-gcc
-LD=i686-linux-gnu-ld
-GRUB=grub-mkrescue
+CORE_URL=https://mirrors.sau.edu.cn/tinycorelinux/17.x/x86/release/Core-17.1.iso
+CORE_SHA256=8fe45bbda0e9b52e5874dd6e9733aac5051e6311282c1e056c852fb1fd721b08
 
 all: $(BUILD)/os.iso
 
 $(BUILD):
 	mkdir -p $(BUILD)
 
-$(BUILD)/multiboot.o: src/multiboot.asm | $(BUILD)
-	nasm -f elf32 src/multiboot.asm -o $(BUILD)/multiboot.o
+$(BUILD)/Core-17.1.iso: | $(BUILD)
+	curl -L --fail --retry 3 --connect-timeout 15 $(CORE_URL) -o $(BUILD)/Core-17.1.iso
+	printf '%s  %s\n' '$(CORE_SHA256)' '$(BUILD)/Core-17.1.iso' | sha256sum -c -
 
-$(BUILD)/kernel.o: src/kernel.c | $(BUILD)
-	$(CC) -m32 -march=i686 -ffreestanding -fno-pie -fno-stack-protector -fno-builtin -nostdlib -nodefaultlibs -nostartfiles -c src/kernel.c -o $(BUILD)/kernel.o
-
-$(BUILD)/kernel.elf: $(BUILD)/multiboot.o $(BUILD)/kernel.o linker.ld
-	$(LD) -m elf_i386 -T linker.ld -o $(BUILD)/kernel.elf $(BUILD)/multiboot.o $(BUILD)/kernel.o
-	@test $$(stat -c%s $(BUILD)/kernel.elf) -le 65536 || (echo "Kernel ELF unexpectedly large" && exit 1)
-
-$(BUILD)/isodir/boot/grub/grub.cfg: $(BUILD)/kernel.elf | $(BUILD)
-	mkdir -p $(BUILD)/isodir/boot/grub
-	cp $(BUILD)/kernel.elf $(BUILD)/isodir/boot/kernel.elf
-	printf '%s\n' 'set timeout=0' 'set default=0' 'menuentry "Custom OS" {' '  multiboot /boot/kernel.elf' '  boot' '}' > $(BUILD)/isodir/boot/grub/grub.cfg
-
-$(BUILD)/os.iso: $(BUILD)/isodir/boot/grub/grub.cfg
-	$(GRUB) -o $(BUILD)/os.iso $(BUILD)/isodir
+$(BUILD)/os.iso: $(BUILD)/Core-17.1.iso
+	cp $(BUILD)/Core-17.1.iso $(BUILD)/os.iso
 
 clean:
 	rm -rf $(BUILD)

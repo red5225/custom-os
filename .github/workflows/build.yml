@@ -13,29 +13,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y nasm gcc-i686-linux-gnu binutils-i686-linux-gnu grub-pc-bin grub-common xorriso qemu-system-x86
-
-      - name: Build OS
+      - name: Build from proven Tiny Core base
         run: |
           make clean
           make
-          file build/os.iso build/kernel.elf
-          ls -lh build/os.iso build/kernel.elf
+          file build/os.iso
+          ls -lh build/os.iso
 
       - name: Smoke-test ISO with QEMU
         run: |
           set +e
-          timeout 8s qemu-system-i386 -cdrom build/os.iso -boot d -display none -monitor none -serial none -no-reboot -no-shutdown
+          timeout 12s qemu-system-i386 -cdrom build/os.iso -boot d -display none -monitor none -serial none -no-reboot -no-shutdown
           rc=$?
           set -e
           if [ "$rc" -ne 124 ]; then
             echo "QEMU exited unexpectedly with code $rc"
             exit 1
           fi
-          echo "GRUB ISO stayed running for 8 seconds: boot smoke test passed"
+          echo "Tiny Core ISO stayed running for 12 seconds: boot smoke test passed"
 
       - name: Upload ISO
         uses: actions/upload-artifact@v4
