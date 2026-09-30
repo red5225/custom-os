@@ -10,11 +10,12 @@ start:
     mov sp, 0x7C00
     mov [boot_drive], dl
 
-    ; VGA mode 13h: 320x200x256.
+    ; This OS is BIOS/legacy boot only. UTM SE should have UEFI disabled.
     mov ax, 0x0013
     int 0x10
 
-    ; Load kernel sectors 2-17 to physical address 0x10000.
+    ; Load the first 16 sectors after the boot sector.
+    ; The kernel is checked by the Makefile to fit in this space.
     mov ah, 0x02
     mov al, 16
     mov ch, 0

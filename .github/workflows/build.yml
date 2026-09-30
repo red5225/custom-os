@@ -11,21 +11,42 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Install build tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y nasm gcc-i686-linux-gnu binutils-i686-linux-gnu genisoimage file
+          sudo apt-get install -y nasm gcc-i686-linux-gnu binutils-i686-linux-gnu genisoimage file qemu-system-x86
+
       - name: Build OS
         run: |
           make clean
           make
           file build/os.iso
-          ls -lh build/os.iso build/os.img
+          ls -lh build/os.iso build/os.img build/kernel.bin
+
+      - name: Validate boot sector
+        run: |
+          test "$(xxd -p -s 510 -l 2 build/boot.bin)" = "55aa"
+          echo "BIOS boot signature OK"
+
+      - name: Smoke-test ISO with QEMU
+        run: |
+          set +e
+          timeout 8s qemu-system-i386 -cdrom build/os.iso -boot d -display none -monitor none -serial none -no-reboot -no-shutdown
+          rc=$?
+          set -e
+          if [ "$rc" -ne 124 ]; then
+            echo "QEMU exited unexpectedly with code $rc"
+            exit 1
+          fi
+          echo "QEMU stayed running for 8 seconds: ISO boot smoke test passed"
+
       - name: Upload ISO
         uses: actions/upload-artifact@v4
         with:
           name: custom-os-iso
           path: build/os.iso
+
       - name: Upload raw disk image
         uses: actions/upload-artifact@v4
         with:
