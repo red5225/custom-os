@@ -1,4 +1,7 @@
 BUILD=build
+CC=i686-linux-gnu-gcc
+LD=i686-linux-gnu-ld
+OBJCOPY=i686-linux-gnu-objcopy
 
 all: $(BUILD)/os.iso
 
@@ -9,9 +12,9 @@ $(BUILD)/boot.bin: src/boot.asm | $(BUILD)
 	nasm -f bin src/boot.asm -o $(BUILD)/boot.bin
 
 $(BUILD)/kernel.bin: src/kernel.c | $(BUILD)
-	i686-elf-gcc -m32 -ffreestanding -fno-pie -fno-stack-protector -fno-builtin -nostdlib -nostartfiles -nodefaultlibs -c src/kernel.c -o $(BUILD)/kernel.o
-	i686-elf-ld -m elf_i386 -Ttext 0x10000 -o $(BUILD)/kernel.elf $(BUILD)/kernel.o
-	i686-elf-objcopy -O binary $(BUILD)/kernel.elf $(BUILD)/kernel.bin
+	$(CC) -m32 -march=i686 -ffreestanding -fno-pie -fno-stack-protector -fno-builtin -nostdlib -nostartfiles -nodefaultlibs -c src/kernel.c -o $(BUILD)/kernel.o
+	$(LD) -m elf_i386 -Ttext 0x10000 --oformat elf32-i386 -o $(BUILD)/kernel.elf $(BUILD)/kernel.o
+	$(OBJCOPY) -O binary $(BUILD)/kernel.elf $(BUILD)/kernel.bin
 
 $(BUILD)/os.iso: $(BUILD)/boot.bin $(BUILD)/kernel.bin | $(BUILD)
 	cat $(BUILD)/boot.bin $(BUILD)/kernel.bin > $(BUILD)/os.img

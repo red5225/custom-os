@@ -8,17 +8,20 @@ start:
     mov es, ax
     mov ss, ax
     mov sp, 0x7C00
-
     mov [boot_drive], dl
 
-    ; Load the protected-mode kernel from sectors 2-17 to 0x1000:0000.
+    ; VGA mode 13h: 320x200x256.
+    mov ax, 0x0013
+    int 0x10
+
+    ; Load kernel sectors 2-17 to physical address 0x10000.
     mov ah, 0x02
     mov al, 16
     mov ch, 0
     mov cl, 2
     mov dh, 0
     mov dl, [boot_drive]
-    mov bx, 0x0000
+    xor bx, bx
     mov es, bx
     mov bx, 0x1000
     int 0x13
@@ -35,10 +38,13 @@ disk_error:
 .print:
     lodsb
     test al, al
-    jz $
+    jz .halt
     mov ah, 0x0E
     int 0x10
     jmp .print
+.halt:
+    hlt
+    jmp .halt
 
 BITS 32
 protected_mode:
