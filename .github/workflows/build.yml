@@ -23,7 +23,8 @@ jobs:
         run: |
           wget -q https://buildroot.org/downloads/buildroot-2026.08.tar.xz
           tar -xf buildroot-2026.08.tar.xz
-          cp -a board/custom buildroot/board/custom
+          mkdir -p buildroot/board/custom
+          cp -a board/custom/. buildroot/board/custom/
 
       - name: Configure tiny Linux
         working-directory: buildroot
