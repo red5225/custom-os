@@ -1,0 +1,28 @@
+#!/bin/sh
+case "$1" in
+  start)
+    clear
+    printf '\033[1;36m'
+    cat <<'EOF'
+  ____            _                   ___  ____
+ / ___| _   _ ___| |_ ___  _ __ ___  / _ \/ ___|
+| |   | | | / __| __/ _ \| '_ ` _ \| | | \___ \
+| |___| |_| \__ \ || (_) | | | | | | |_| |___) |
+ \____|\__,_|___/\__\___/|_| |_| |_|\___/|____/
+
+EOF
+    printf '\033[0m'
+    echo "  Custom OS"
+    echo "  Linux kernel + BusyBox + Buildroot"
+    echo
+    echo "  Hardware : i386 / Intel PC"
+    echo "  Boot     : Legacy BIOS"
+    echo "  VM       : UTM"
+    echo
+    echo "  [ SYSTEM ONLINE ]"
+    echo
+    echo "  Type 'help' for available commands."
+    echo
+    ;;
+esac
+exit 0
