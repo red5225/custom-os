@@ -10,21 +10,16 @@ start:
     mov sp, 0x7C00
     mov [boot_drive], dl
 
-    ; This OS is BIOS/legacy boot only. UTM SE should have UEFI disabled.
+    ; Set 320x200 256-color VGA mode.
     mov ax, 0x0013
     int 0x10
 
-    ; Load the first 16 sectors after the boot sector.
-    ; The kernel is checked by the Makefile to fit in this space.
-    mov ah, 0x02
-    mov al, 16
-    mov ch, 0
-    mov cl, 2
-    mov dh, 0
+    ; Read the kernel from LBA 1 using BIOS INT 13h extensions.
+    ; This works with UTM's El Torito CD/ISO boot drive as well as
+    ; normal BIOS disk emulation.
+    mov si, disk_address_packet
     mov dl, [boot_drive]
-    xor bx, bx
-    mov es, bx
-    mov bx, 0x1000
+    mov ah, 0x42
     int 0x13
     jc disk_error
 
@@ -58,6 +53,15 @@ protected_mode:
 
 boot_drive db 0
 msg db "Custom OS: disk read error", 0
+
+align 4
+disk_address_packet:
+    db 0x10
+    db 0
+    dw 16
+    dw 0x1000
+    dw 0
+    dq 1
 
 gdt_start:
     dq 0

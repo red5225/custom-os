@@ -20,7 +20,7 @@ $(BUILD)/kernel.bin: src/kernel.c | $(BUILD)
 $(BUILD)/os.iso: $(BUILD)/boot.bin $(BUILD)/kernel.bin | $(BUILD)
 	cat $(BUILD)/boot.bin $(BUILD)/kernel.bin > $(BUILD)/os.img
 	truncate -s 1474560 $(BUILD)/os.img
-	genisoimage -quiet -o $(BUILD)/os.iso -b os.img -no-emul-boot $(BUILD)/os.img
+	genisoimage -quiet -o $(BUILD)/os.iso -b os.img -c boot.cat -no-emul-boot -boot-load-size 2880 -boot-info-table $(BUILD)/os.img
 
 clean:
 	rm -rf $(BUILD)
