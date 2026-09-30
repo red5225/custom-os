@@ -1,1 +1,44 @@
-BUILD=build\nCORE_URL=http://repo.tinycorelinux.net/17.x/x86/release/Core-17.1.iso\nCORE_SHA256=8fe45bbda0e9b52e5874dd6e9733aac5051e6311282c1e056c852fb1fd721b08\nTCZ_BASE=http://repo.tinycorelinux.net/17.x/x86/tcz\nPYTHON_TCZ=python3.14.tcz\nDESKTOP_PACKAGES=Xfbdev.tcz jwm.tcz aterm.tcz\n\nall: $(BUILD)/os.iso\n\n$(BUILD):\n\tmkdir -p $(BUILD)\n\n$(BUILD)/Core-17.1.iso: | $(BUILD)\n\twget -c --tries=20 --timeout=20 --waitretry=2 $(CORE_URL) -O $@\n\tprintf '%s  %s\\n' '$(CORE_SHA256)' '$@' | sha256sum -c -\n\n$(BUILD)/os.iso: $(BUILD)/Core-17.1.iso scripts/fetch_tcz.py\n\trm -rf $(BUILD)/iso-root $(BUILD)/tcz $(BUILD)/initrd-root\n\tmkdir -p $(BUILD)/iso-root $(BUILD)/tcz $(BUILD)/initrd-root\n\txorriso -osirrox on -indev $(BUILD)/Core-17.1.iso -extract / $(BUILD)/iso-root\n\tchmod -R u+rwX $(BUILD)/iso-root\n\tpython3 scripts/fetch_tcz.py $(TCZ_BASE) $(PYTHON_TCZ) $(BUILD)/tcz\n\tfor pkg in $(DESKTOP_PACKAGES); do python3 scripts/fetch_tcz.py $(TCZ_BASE) $$pkg $(BUILD)/tcz; done\n\tcd $(BUILD)/tcz && ls -1 *.tcz > ../iso-root/tce/onboot.lst\n\tmkdir -p $(BUILD)/iso-root/tce/optional\n\tcp $(BUILD)/tcz/*.tcz $(BUILD)/iso-root/tce/optional/\n\tfor cfg in $(BUILD)/iso-root/boot/isolinux/isolinux.cfg $(BUILD)/iso-root/boot/isolinux/*.cfg; do [ -f "$$cfg" ] || continue; sed -i 's#append #append tce=sr0 #g' "$$cfg"; done\n\tgunzip -c $(BUILD)/iso-root/boot/core.gz | (cd $(BUILD)/initrd-root && cpio -idm --quiet)\n\tchmod -R u+rwX $(BUILD)/initrd-root\n\tcp -a board/custom/rootfs_overlay/. $(BUILD)/initrd-root/\n\tmkdir -p $(BUILD)/initrd-root/usr/local/bin $(BUILD)/initrd-root/home/tc\n\tcp desktop/start-desktop.sh $(BUILD)/initrd-root/usr/local/bin/start-desktop\n\tcp desktop/desktop-launcher.sh $(BUILD)/initrd-root/usr/local/bin/custom-launcher\n\tcp desktop/jwmrc $(BUILD)/initrd-root/home/tc/.jwmrc\n\tchmod +x $(BUILD)/initrd-root/usr/local/bin/start-desktop $(BUILD)/initrd-root/usr/local/bin/custom-launcher $(BUILD)/initrd-root/etc/init.d/S99custom\n\tcd $(BUILD)/initrd-root && find . -print | cpio -o -H newc --quiet | gzip -9 > ../iso-root/boot/core.gz\n\trm -f $(BUILD)/os.iso\n\txorriso -as mkisofs -l -J -R -V CUSTOMOS -no-emul-boot -boot-load-size 4 -boot-info-table -b boot/isolinux/isolinux.bin -c boot/isolinux/boot.cat -o $(BUILD)/os.iso $(BUILD)/iso-root\n\nclean:\n\trm -rf $(BUILD)\n
+BUILD=build
+CORE_URL=http://repo.tinycorelinux.net/17.x/x86/release/Core-17.1.iso
+CORE_SHA256=8fe45bbda0e9b52e5874dd6e9733aac5051e6311282c1e056c852fb1fd721b08
+TCZ_BASE=http://repo.tinycorelinux.net/17.x/x86/tcz
+PYTHON_TCZ=python3.14.tcz
+DESKTOP_PACKAGES=Xfbdev.tcz jwm.tcz aterm.tcz
+
+all: $(BUILD)/os.iso
+
+$(BUILD):
+	mkdir -p $(BUILD)
+
+$(BUILD)/Core-17.1.iso: | $(BUILD)
+	wget -c --tries=20 --timeout=20 --waitretry=2 $(CORE_URL) -O $@
+	printf '%s  %s\n' '$(CORE_SHA256)' '$@' | sha256sum -c -
+
+$(BUILD)/os.iso: $(BUILD)/Core-17.1.iso scripts/fetch_tcz.py
+	rm -rf $(BUILD)/iso-root $(BUILD)/tcz $(BUILD)/initrd-root
+	mkdir -p $(BUILD)/iso-root $(BUILD)/tcz $(BUILD)/initrd-root
+	xorriso -osirrox on -indev $(BUILD)/Core-17.1.iso -extract / $(BUILD)/iso-root
+	chmod -R u+rwX $(BUILD)/iso-root
+	python3 scripts/fetch_tcz.py $(TCZ_BASE) $(PYTHON_TCZ) $(BUILD)/tcz
+	for pkg in $(DESKTOP_PACKAGES); do python3 scripts/fetch_tcz.py $(TCZ_BASE) $$pkg $(BUILD)/tcz; done
+	cd $(BUILD)/tcz && ls -1 *.tcz > ../iso-root/tce/onboot.lst
+	mkdir -p $(BUILD)/iso-root/tce/optional
+	cp $(BUILD)/tcz/*.tcz $(BUILD)/iso-root/tce/optional/
+	for cfg in $(BUILD)/iso-root/boot/isolinux/isolinux.cfg $(BUILD)/iso-root/boot/isolinux/*.cfg; do [ -f "$$cfg" ] || continue; sed -i 's#append #append tce=sr0 #g' "$$cfg"; done
+	for cfg in $(BUILD)/iso-root/boot/isolinux/isolinux.cfg $(BUILD)/iso-root/boot/isolinux/*.cfg; do [ -f "$$cfg" ] || continue; sed -i '1i menu title CUSTOM OS | Intel x86\nmenu tabmsg Custom OS desktop\nmenu timeout 30' "$$cfg"; done
+	gunzip -c $(BUILD)/iso-root/boot/core.gz | (cd $(BUILD)/initrd-root && cpio -idm --quiet)
+	chmod -R u+rwX $(BUILD)/initrd-root
+	cp -a board/custom/rootfs_overlay/. $(BUILD)/initrd-root/
+	mkdir -p $(BUILD)/initrd-root/usr/local/bin $(BUILD)/initrd-root/usr/local/share/custom-os $(BUILD)/initrd-root/home/tc
+	cp desktop/start-desktop.sh $(BUILD)/initrd-root/usr/local/bin/start-desktop
+	cp desktop/desktop-launcher.sh $(BUILD)/initrd-root/usr/local/bin/custom-launcher
+	cp desktop/jwmrc $(BUILD)/initrd-root/home/tc/.jwmrc
+	cp desktop/boot-banner.txt $(BUILD)/initrd-root/usr/local/share/custom-os/boot-banner.txt
+	cp desktop/login-banner.sh $(BUILD)/initrd-root/usr/local/bin/custom-login-banner
+	chmod +x $(BUILD)/initrd-root/usr/local/bin/start-desktop $(BUILD)/initrd-root/usr/local/bin/custom-launcher $(BUILD)/initrd-root/usr/local/bin/custom-login-banner $(BUILD)/initrd-root/etc/init.d/S99custom
+	cd $(BUILD)/initrd-root && find . -print | cpio -o -H newc --quiet | gzip -9 > ../iso-root/boot/core.gz
+	rm -f $(BUILD)/os.iso
+	xorriso -as mkisofs -l -J -R -V CUSTOMOS -no-emul-boot -boot-load-size 4 -boot-info-table -b boot/isolinux/isolinux.bin -c boot/isolinux/boot.cat -o $(BUILD)/os.iso $(BUILD)/iso-root
+
+clean:
+	rm -rf $(BUILD)
