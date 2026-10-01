@@ -1,27 +1,14 @@
-# Custom OS
+# Custom OS — minimal x86 kernel ISO
 
-Custom OS is now built on top of a tiny Linux system instead of a hand-written kernel.
+A clean starting point for our own OS.
 
-The build uses Buildroot, which produces a small Linux kernel, BusyBox userspace, initramfs, and a BIOS-bootable ISO. Buildroot's current stable release is 2026.08.
+The ISO contains one tiny 32-bit x86 kernel loaded by GRUB BIOS. It writes HI FROM CUSTOM OS directly to VGA text memory.
 
-## Target
+Build: make
+Output: build/custom-os.iso
 
-- Intel i386/x86 PC
-- UTM on Intel Mac
-- Legacy BIOS
-- UEFI disabled
-- Small ISO
-- Linux kernel + BusyBox base
-- Custom boot screen and shell
+UTM: Emulate -> Other -> Intel i440FX / x86, Legacy BIOS, UEFI off, attach the ISO.
 
-## Build
+Add features in kernel/kernel.c, boot/boot.S, linker.ld, iso/boot/grub/grub.cfg, and Makefile.
 
-GitHub Actions downloads Buildroot 2026.08, configures the x86 PC target, adds the Custom OS root filesystem overlay, builds the Linux kernel/userspace, and creates a bootable ISO.
-
-The generated ISO is uploaded as the custom-os-linux-iso artifact.
-
-## UTM
-
-Choose Emulate -> Other -> Intel i440FX-based PC, use 512 MB RAM, keep UEFI disabled, and attach the generated ISO as the CD/DVD.
-
-This Linux-based approach gives us a real kernel, device drivers, process management, filesystems, networking support, and BusyBox userspace while keeping the base small.
+No Linux, Buildroot, Tiny Core, Python, desktop packages, or external root filesystem.

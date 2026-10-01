@@ -1,3 +1,0 @@
-# Custom OS console configuration
-::sysinit:/etc/init.d/rcS
-tty1::respawn:/bin/sh /usr/local/bin/custom-os-launch

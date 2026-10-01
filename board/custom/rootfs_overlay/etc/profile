@@ -1,3 +1,0 @@
-export PS1='[CustomOS] \u@custom-os:\w$ '
-export EDITOR=vi
-export TERM=xterm

@@ -1,36 +1,26 @@
-name: Build OS
-
+name: Build Custom OS
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install ISO build tools
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends xorriso cpio
-
-      - name: Build custom OS desktop
+      - uses: actions/checkout@v4
+      - name: Install x86 ISO tools
+        run: sudo apt-get update && sudo apt-get install -y gcc-multilib grub-pc-bin grub-common xorriso qemu-system-x86
+      - name: Build
+        run: make
+      - name: BIOS smoke test
         run: |
-          make clean
-          make
-          file build/os.iso
-          ls -lh build/os.iso
-          test -f build/iso-root/tce/optional/python3.14.tcz
-          test -f build/iso-root/tce/optional/Xvesa.tcz
-          test -f build/iso-root/tce/optional/jwm.tcz
-          test -f build/iso-root/tce/optional/aterm.tcz
-          test -f build/initrd-root/opt/backgrounds/custom-os.png
-          xorriso -indev build/os.iso -toc
-
+          timeout 8s qemu-system-i386 -cdrom build/custom-os.iso -display none -serial stdio -no-reboot -no-shutdown > qemu.log 2>&1 || true
+          grep -q "HI FROM CUSTOM OS" qemu.log || { cat qemu.log; exit 1; }
+      - name: Show sizes
+        run: ls -lh build/custom-os.iso build/kernel.bin
       - name: Upload ISO
         uses: actions/upload-artifact@v4
         with:
-          name: custom-os-iso
-          path: build/os.iso
+          name: custom-os-x86-iso
+          path: build/custom-os.iso
