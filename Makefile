@@ -1,6 +1,6 @@
 BUILD=build
 CORE_URL=http://repo.tinycorelinux.net/17.x/x86/release/Core-17.1.iso
-CORE_SHA256=8fe45bbda0e9b52e5874dd6e9733aac5051e6311282c1e056c852bf1fd721b08
+CORE_SHA256=8fe45bbda0e9b52e5874dd6e9733aac5051e6311282c1e056c852fb1fd721b08
 TCZ_BASE=http://repo.tinycorelinux.net/17.x/x86/tcz
 PYTHON_TCZ=python3.14.tcz
 DESKTOP_PACKAGES=Xvesa.tcz jwm.tcz aterm.tcz
