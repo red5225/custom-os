@@ -8,6 +8,10 @@ case "$1" in
     echo "  Custom OS graphical desktop"
     echo "  Python 3.14 runtime installed"
     echo
+    # Launch the graphical desktop automatically as the normal Tiny Core user.
+    if command -v start-desktop >/dev/null 2>&1; then
+      su - tc -c '/usr/local/bin/start-desktop >/tmp/custom-desktop.log 2>&1 &' || true
+    fi
     ;;
 esac
 exit 0
