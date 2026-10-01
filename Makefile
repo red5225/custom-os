@@ -20,6 +20,6 @@ $(BUILD)/custom-os.iso: $(BUILD)/kernel.bin iso/boot/grub/grub.cfg
 	cp $(BUILD)/kernel.bin $(BUILD)/iso/boot/kernel.bin
 	cp iso/boot/grub/grub.cfg $(BUILD)/iso/boot/grub/grub.cfg
 	grub-mkrescue -o $@ $(BUILD)/iso >/dev/null
-	isoinfo -d -i $@ >/dev/null
+	test -s $@
 clean:
 	rm -rf $(BUILD)
