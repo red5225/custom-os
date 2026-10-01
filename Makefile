@@ -1,9 +1,9 @@
 BUILD=build
 CORE_URL=http://repo.tinycorelinux.net/17.x/x86/release/Core-17.1.iso
-CORE_SHA256=8fe45bbda0e9b52e5874dd6e9733aac5051e6311282c1e056c852fb1fd721b08
+CORE_SHA256=8fe45bbda0e9b52e5874dd6e9733aac5051e6311282c1e056c852bf1fd721b08
 TCZ_BASE=http://repo.tinycorelinux.net/17.x/x86/tcz
 PYTHON_TCZ=python3.14.tcz
-DESKTOP_PACKAGES=Xfbdev.tcz jwm.tcz aterm.tcz
+DESKTOP_PACKAGES=Xvesa.tcz jwm.tcz aterm.tcz
 
 all: $(BUILD)/os.iso
 
@@ -23,14 +23,13 @@ $(BUILD)/os.iso: $(BUILD)/Core-17.1.iso scripts/fetch_tcz.py scripts/make_wallpa
 	for pkg in $(DESKTOP_PACKAGES); do python3 scripts/fetch_tcz.py $(TCZ_BASE) $$pkg $(BUILD)/tcz; done
 	mkdir -p $(BUILD)/iso-root/tce/optional
 	cp $(BUILD)/tcz/*.tcz $(BUILD)/iso-root/tce/optional/
-	(cd $(BUILD)/tcz && ls -1 *.tcz) > $(BUILD)/iso-root/tce/onboot.lst
+	printf '%s\n' Xvesa.tcz jwm.tcz aterm.tcz > $(BUILD)/iso-root/tce/onboot.lst
 	mkdir -p $(BUILD)/initrd-root
 	gunzip -c $(BUILD)/iso-root/boot/core.gz | (cd $(BUILD)/initrd-root && sudo cpio -idm --quiet)
 	sudo chown -R $$(id -u):$$(id -g) $(BUILD)/initrd-root
 	chmod -R u+rwX $(BUILD)/initrd-root
 	cp -a board/custom/rootfs_overlay/. $(BUILD)/initrd-root/
-	mkdir -p $(BUILD)/initrd-root/usr/local/bin $(BUILD)/initrd-root/usr/local/share/custom-os $(BUILD)/initrd-root/opt/backgrounds $(BUILD)/initrd-root/home/tc/.X.d
-	python3 scripts/make_wallpaper.py $(BUILD)/initrd-root/opt/backgrounds/custom-os.png
+	mkdir -p $(BUILD)/initrd-root/usr/local/bin $(BUILD)/initrd-root/usr/local/share/custom-os /opt/backgrounds /home/tc/.X.d
 	cp desktop/start-desktop.sh $(BUILD)/initrd-root/usr/local/bin/start-desktop
 	cp desktop/desktop-launcher.sh $(BUILD)/initrd-root/usr/local/bin/custom-launcher
 	cp desktop/jwmrc $(BUILD)/initrd-root/home/tc/.jwmrc
@@ -38,8 +37,9 @@ $(BUILD)/os.iso: $(BUILD)/Core-17.1.iso scripts/fetch_tcz.py scripts/make_wallpa
 	cp desktop/login-banner.sh $(BUILD)/initrd-root/usr/local/bin/custom-login-banner
 	cp desktop/xinit-custom $(BUILD)/initrd-root/home/tc/.X.d/custom-os
 	chmod +x $(BUILD)/initrd-root/usr/local/bin/start-desktop $(BUILD)/initrd-root/usr/local/bin/custom-launcher $(BUILD)/initrd-root/usr/local/bin/custom-login-banner $(BUILD)/initrd-root/home/tc/.X.d/custom-os
+	python3 scripts/make_wallpaper.py $(BUILD)/initrd-root/opt/backgrounds/custom-os.png
 	cd $(BUILD)/initrd-root && find . -print | cpio -o -H newc --quiet | gzip -9 > ../iso-root/boot/core.gz
-	for cfg in $(BUILD)/iso-root/boot/isolinux/isolinux.cfg $(BUILD)/iso-root/boot/isolinux/*.cfg; do [ -f "$$cfg" ] || continue; sed -i 's#tce=sr0#tce=sr0 bkg=custom-os.png#g' "$$cfg"; sed -i '1i MENU TITLE CUSTOM OS | Intel x86' "$$cfg"; done
+	for cfg in $(BUILD)/iso-root/boot/isolinux/isolinux.cfg $(BUILD)/iso-root/boot/isolinux/*.cfg; do [ -f "$$cfg" ] || continue; sed -i 's#tce=sr0#tce=sr0 desktop=custom-os#g' "$$cfg"; done
 	rm -f $@
 	xorriso -as mkisofs -l -J -R -V CUSTOMOS -no-emul-boot -boot-load-size 4 -boot-info-table -b boot/isolinux/isolinux.bin -c boot/isolinux/boot.cat -o $@ $(BUILD)/iso-root
 
