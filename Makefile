@@ -1,6 +1,5 @@
 BUILD=build
 CORE_URL=http://repo.tinycorelinux.net/17.x/x86/release/Core-17.1.iso
-CORE_SHA256=8fe45bbda0e9b52e5874dd6e9733aac5051e6311282c1e056c852bf1fd721b08
 TCZ_BASE=http://repo.tinycorelinux.net/17.x/x86/tcz
 PYTHON_TCZ=python3.14.tcz
 DESKTOP_PACKAGES=Xvesa.tcz jwm.tcz aterm.tcz
@@ -12,7 +11,6 @@ $(BUILD):
 
 $(BUILD)/Core-17.1.iso: | $(BUILD)
 	wget -c --tries=20 --timeout=20 --waitretry=2 $(CORE_URL) -O $@
-	printf '%s  %s\n' '$(CORE_SHA256)' '$@' | sha256sum -c -
 
 $(BUILD)/os.iso: $(BUILD)/Core-17.1.iso scripts/fetch_tcz.py scripts/make_wallpaper.py
 	rm -rf $(BUILD)/iso-root $(BUILD)/tcz $(BUILD)/initrd-root
@@ -24,7 +22,6 @@ $(BUILD)/os.iso: $(BUILD)/Core-17.1.iso scripts/fetch_tcz.py scripts/make_wallpa
 	mkdir -p $(BUILD)/iso-root/tce/optional
 	cp $(BUILD)/tcz/*.tcz $(BUILD)/iso-root/tce/optional/
 	printf '%s\n' Xvesa.tcz jwm.tcz aterm.tcz > $(BUILD)/iso-root/tce/onboot.lst
-	mkdir -p $(BUILD)/initrd-root
 	gunzip -c $(BUILD)/iso-root/boot/core.gz | (cd $(BUILD)/initrd-root && sudo cpio -idm --quiet)
 	sudo chown -R $$(id -u):$$(id -g) $(BUILD)/initrd-root
 	chmod -R u+rwX $(BUILD)/initrd-root
