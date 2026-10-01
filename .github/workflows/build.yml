@@ -23,7 +23,7 @@ jobs:
           file build/os.iso
           ls -lh build/os.iso
           test -f build/iso-root/tce/optional/python3.14.tcz
-          test -f build/iso-root/tce/optional/Xfbdev.tcz
+          test -f build/iso-root/tce/optional/Xvesa.tcz
           test -f build/iso-root/tce/optional/jwm.tcz
           test -f build/iso-root/tce/optional/aterm.tcz
           test -f build/initrd-root/opt/backgrounds/custom-os.png

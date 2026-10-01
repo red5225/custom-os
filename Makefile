@@ -1,6 +1,6 @@
 BUILD=build
 CORE_URL=http://repo.tinycorelinux.net/17.x/x86/release/Core-17.1.iso
-CORE_SHA256=8fe45bbda0e9b52e5874dd6e9733aac5051e6311282c1e056c852fb1fd721b08
+CORE_SHA256=8fe45bbda0e9b52e5874dd6e9733aac5051e6311282c1e056c852bf1fd721b08
 TCZ_BASE=http://repo.tinycorelinux.net/17.x/x86/tcz
 PYTHON_TCZ=python3.14.tcz
 DESKTOP_PACKAGES=Xvesa.tcz jwm.tcz aterm.tcz
@@ -29,7 +29,7 @@ $(BUILD)/os.iso: $(BUILD)/Core-17.1.iso scripts/fetch_tcz.py scripts/make_wallpa
 	sudo chown -R $$(id -u):$$(id -g) $(BUILD)/initrd-root
 	chmod -R u+rwX $(BUILD)/initrd-root
 	cp -a board/custom/rootfs_overlay/. $(BUILD)/initrd-root/
-	mkdir -p $(BUILD)/initrd-root/usr/local/bin $(BUILD)/initrd-root/usr/local/share/custom-os /opt/backgrounds /home/tc/.X.d
+	mkdir -p $(BUILD)/initrd-root/usr/local/bin $(BUILD)/initrd-root/usr/local/share/custom-os $(BUILD)/initrd-root/opt/backgrounds $(BUILD)/initrd-root/home/tc/.X.d
 	cp desktop/start-desktop.sh $(BUILD)/initrd-root/usr/local/bin/start-desktop
 	cp desktop/desktop-launcher.sh $(BUILD)/initrd-root/usr/local/bin/custom-launcher
 	cp desktop/jwmrc $(BUILD)/initrd-root/home/tc/.jwmrc
