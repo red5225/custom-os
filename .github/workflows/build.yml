@@ -7,25 +7,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install minimal x86 ISO tools
+      - name: Install x86 build and ISO tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq gcc-multilib grub-pc-bin xorriso mtools
-
+          sudo apt-get install -y -qq gcc-multilib nasm grub-pc-bin grub-common xorriso mtools
       - name: Build
         run: make -j2
-
       - name: Validate
         run: |
-          grub-file --is-x86-multiboot build/kernel.bin
-          test -s build/custom-os.iso
-
+          grub-file --is-x86-multiboot2 kernel.bin
+          test -s custom-os.iso
       - name: Upload ISO
         uses: actions/upload-artifact@v4
         with:
-          name: custom-os-x86-iso
-          path: build/custom-os.iso
+          name: custom-os-drivers-ui
+          path: custom-os.iso
