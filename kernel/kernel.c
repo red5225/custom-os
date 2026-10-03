@@ -14,6 +14,7 @@ static void text_clear(void){
     for(int i=0;i<80*25;i++) TEXT[i]=(u16)' '|((u16)0x07<<8);
 }
 static void text_put(int row,int col,const char*s,u8 color){
+    if(row<0 || row>=25 || col<0 || !s) return;
     while(*s && col<80) TEXT[row*80+col++]=(u16)*s++|((u16)color<<8);
 }
 static int eq(const char*a,const char*b){
@@ -27,6 +28,18 @@ static char key(u8 s){
     if(s>=0x2C&&s<=0x35) return "zxcvbnm,./"[s-0x2C];
     if(s==0x39) return ' ';
     return 0;
+}
+
+static void keyboard_init(void){
+    u32 t=0;
+    while((inb(0x64)&2) && ++t<1000000) {}
+    outb(0x64,0xAE);
+    t=0; while((inb(0x64)&2) && ++t<1000000) {}
+    outb(0x60,0xF0);
+    t=0; while((inb(0x64)&2) && ++t<1000000) {}
+    outb(0x60,0x01);
+    t=0; while(!(inb(0x64)&1) && ++t<1000000) {}
+    if(t<1000000) (void)inb(0x60);
 }
 
 static void pit_init(void){
@@ -157,8 +170,8 @@ static void shell(void){
     text_clear();
     text_put(1,2,"CUSTOM OS",0x0B);
     text_put(3,2,"HI FROM CUSTOM OS",0x0A);
-    text_put(5,2,"TEXT MODE KERNEL ONLINE",0x0F);
-    text_put(7,2,"Type 'help' for commands.",0x07);
+    text_put(5,2,"TEXT KERNEL ONLINE",0x0F);
+    text_put(7,2,"help=commands  ui=graphics  clear=screen",0x07);
 
     char cmd[64];
     int n=0,row=9;
@@ -193,15 +206,17 @@ static void shell(void){
             TEXT[row*80+3+n]=(u16)' '|((u16)0x07<<8);
         }else{
             char c=key(s);
-            if(c&&n<60){
+            if(c&&n<63){
                 cmd[n++]=c;
-                TEXT[row*80+3+n-1]=(u16)c|((u16)0x0F<<8);
+                if(row>=0 && row<25 && n>0 && n<=63)
+                    TEXT[row*80+3+n-1]=(u16)c|((u16)0x0F<<8);
             }
         }
     }
 }
 
 void kmain(void){
+    keyboard_init();
     pit_init();
     shell();
     for(;;)__asm__ volatile("hlt");
