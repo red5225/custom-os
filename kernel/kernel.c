@@ -1,5 +1,6 @@
 #include "kernel.h"
 #include "keyboard.h"
+#include "mouse.h"
 #include "screen.h"
 #include "serial.h"
 
@@ -13,14 +14,16 @@ void kernel_main(void) {
 
     print_string("CUSTOM OS\n", CYAN_ON_BLACK, 2, 2);
     print_string("TEXT MODE\n", WHITE_ON_BLACK, 2, 4);
-    print_string("Keyboard polling active.\n", GRAY_ON_BLACK, 2, 6);
+    print_string("Keyboard + PS/2 mouse polling active.\n", GRAY_ON_BLACK, 2, 6);
     print_string("Type help and press Enter.\n\n> ", GRAY_ON_BLACK, 2, 8);
 
     keyboard_init();
+    mouse_init();
     __asm__ __volatile__("cli");
 
     for (;;) {
         keyboard_poll();
+        mouse_poll();
         __asm__ __volatile__("pause");
     }
 }

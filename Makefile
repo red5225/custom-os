@@ -6,7 +6,7 @@ CFLAGS=-ffreestanding -Wall -Wextra -std=gnu99 -m32 -g -c -fno-pie -fno-stack-pr
 LDFLAGS=-T kernel/linker.ld -m elf_i386 -nostdlib
 ASFLAGS=-f elf32
 
-KERNEL_SOURCES=kernel/kernel.c kernel/screen.c kernel/serial.c kernel/keyboard.c kernel/log.c
+KERNEL_SOURCES=kernel/kernel.c kernel/screen.c kernel/serial.c kernel/keyboard.c kernel/log.c kernel/mouse.c
 KERNEL_OBJECTS=$(KERNEL_SOURCES:.c=.o)
 
 all: custom-os.iso
