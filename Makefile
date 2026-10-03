@@ -9,10 +9,12 @@ $(BUILD):
 	mkdir -p $(BUILD)
 $(BUILD)/boot.o: boot/boot.S | $(BUILD)
 	$(CC) -m32 -c $< -o $@
-$(BUILD)/kernel.o: kernel/kernel.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-$(BUILD)/kernel.bin: $(BUILD)/boot.o $(BUILD)/kernel.o linker.ld
-	$(LD) $(LDFLAGS) -o $@ $(BUILD)/boot.o $(BUILD)/kernel.o
+$(BUILD)/kernel.o: kernel/kernel.c kernel/input.h | $(BUILD)
+	$(CC) $(CFLAGS) -Ikernel -c $< -o $@
+$(BUILD)/input.o: kernel/input.c kernel/input.h | $(BUILD)
+	$(CC) $(CFLAGS) -Ikernel -c $< -o $@
+$(BUILD)/kernel.bin: $(BUILD)/boot.o $(BUILD)/kernel.o $(BUILD)/input.o linker.ld
+	$(LD) $(LDFLAGS) -o $@ $(BUILD)/boot.o $(BUILD)/kernel.o $(BUILD)/input.o
 	grub-file --is-x86-multiboot $@
 $(BUILD)/custom-os.iso: $(BUILD)/kernel.bin iso/boot/grub/grub.cfg
 	rm -rf $(BUILD)/iso
