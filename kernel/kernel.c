@@ -30,16 +30,26 @@ static char key(u8 s){
     return 0;
 }
 
-static void keyboard_init(void){
+static int ps2_write_ready(void){
     u32 t=0;
     while((inb(0x64)&2) && ++t<1000000) {}
-    outb(0x64,0xAE);
-    t=0; while((inb(0x64)&2) && ++t<1000000) {}
-    outb(0x60,0xF0);
-    t=0; while((inb(0x64)&2) && ++t<1000000) {}
-    outb(0x60,0x01);
-    t=0; while(!(inb(0x64)&1) && ++t<1000000) {}
-    if(t<1000000) (void)inb(0x60);
+    return t<1000000;
+}
+static int ps2_read_ready(void){
+    u32 t=0;
+    while(!(inb(0x64)&1) && ++t<1000000) {}
+    return t<1000000;
+}
+static void keyboard_init(void){
+    u32 t=0;
+    if(ps2_write_ready()) outb(0x64,0xAD);
+    if(ps2_write_ready()) outb(0x64,0xA7);
+    while((inb(0x64)&1) && ++t<100000) (void)inb(0x60);
+    if(ps2_write_ready()) outb(0x64,0xAE);
+    if(ps2_write_ready()) outb(0x60,0xF0);
+    if(ps2_read_ready()) (void)inb(0x60);
+    if(ps2_write_ready()) outb(0x60,0x01);
+    if(ps2_read_ready()) (void)inb(0x60);
 }
 
 static void pit_init(void){
@@ -90,28 +100,26 @@ static void fill(int x,int y,int w,int h,u8 c){
         if((unsigned)xx<SCREEN_W&&(unsigned)yy<SCREEN_H) VGA[yy*SCREEN_W+xx]=c;
 }
 static void mouse_init(void){
-    u32 t=0;
-    while((inb(0x64)&2)&&++t<1000000){}
-    outb(0x64,0xA8);
-    t=0; while((inb(0x64)&2)&&++t<1000000){}
-    outb(0x64,0xD4);
-    t=0; while((inb(0x64)&2)&&++t<1000000){}
-    outb(0x60,0xF4);
-    t=0; while(!(inb(0x64)&1)&&++t<1000000){}
-    if(t<1000000) inb(0x60);
+    if(ps2_write_ready()) outb(0x64,0xA8);
+    if(ps2_write_ready()) outb(0x64,0xD4);
+    if(ps2_write_ready()) outb(0x60,0xF4);
+    if(ps2_read_ready()) (void)inb(0x60);
 }
 static int mouse_packet(u8 p[3]){
-    if(!(inb(0x64)&1)) return 0;
+    u8 st=inb(0x64);
+    if(!(st&1) || !(st&0x20)) return 0;
     p[0]=inb(0x60);
     if(!(p[0]&8)) return 0;
-    u32 t=0;
-    while(!(inb(0x64)&1)&&++t<1000000) {}
-    if(t>=1000000) return 0;
+    if(!ps2_read_ready()) return 0;
     p[1]=inb(0x60);
-    t=0;
-    while(!(inb(0x64)&1)&&++t<1000000) {}
-    if(t>=1000000) return 0;
+    if(!ps2_read_ready()) return 0;
     p[2]=inb(0x60);
+    return 1;
+}
+static int keyboard_byte(u8 *s){
+    u8 st=inb(0x64);
+    if(!(st&1) || (st&0x20)) return 0;
+    *s=inb(0x60);
     return 1;
 }
 
@@ -130,6 +138,7 @@ static int ui(void){
     /* 10-second watchdog. A click on the large center button returns normally. */
     int mx=160,my=95;
     u8 p[3];
+    int oldmx=mx,oldmy=my;
     u16 prev=pit();
     u32 ticks=0;
 
@@ -154,7 +163,9 @@ static int ui(void){
                 return 1;
             }
         }
+        fill(oldmx,oldmy,4,4,8);
         fill(mx,my,4,4,15);
+        oldmx=mx; oldmy=my;
     }
 
     mode03();
@@ -178,8 +189,8 @@ static void shell(void){
     text_put(row,2,"> ",0x0F);
 
     for(;;){
-        if(!(inb(0x64)&1)) continue;
-        u8 s=inb(0x60);
+        u8 s;
+        if(!keyboard_byte(&s)) continue;
         if(s&0x80) continue;
 
         if(s==0x1C){
