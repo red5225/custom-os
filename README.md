@@ -1,14 +1,20 @@
-# Custom OS — minimal x86 kernel ISO
+# Custom OS
 
-A clean starting point for our own OS.
+A small 32-bit x86 hobby OS designed for UTM/UTM SE.
 
-The ISO contains one tiny 32-bit x86 kernel loaded by GRUB BIOS. It writes HI FROM CUSTOM OS directly to VGA text memory.
+## Interface
 
-Build: make
-Output: build/custom-os.iso
+- Minimal desktop with a mountain/lake wallpaper
+- One application: Terminal
+- Keyboard input with Shift and Caps Lock
+- PS/2 mouse support using polling for emulator compatibility
+- Clean framebuffer rendering
+- Text-mode fallback if a framebuffer is unavailable
 
-UTM: Emulate -> Other -> Intel i440FX / x86, Legacy BIOS, UEFI off, attach the ISO.
+## Terminal commands
 
-Add features in kernel/kernel.c, boot/boot.S, linker.ld, iso/boot/grub/grub.cfg, and Makefile.
+help, clear, echo <text>, time, reboot
 
-No Linux, Buildroot, Tiny Core, Python, desktop packages, or external root filesystem.
+The wallpaper is an SVG rasterized during the GitHub Actions build, so the repository stays small while the ISO contains the image.
+
+Low-level input/kernel components adapted from HelixaOS are documented in THIRD_PARTY.md.

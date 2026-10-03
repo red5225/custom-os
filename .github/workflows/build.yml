@@ -3,17 +3,16 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Install x86 build and ISO tools
+      - name: Install build tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq gcc-multilib nasm grub-pc-bin grub-common xorriso mtools
+          sudo apt-get install -y -qq gcc-multilib nasm grub-pc-bin grub-common xorriso mtools imagemagick
       - name: Build
         run: make -j2
       - name: Validate
@@ -23,5 +22,5 @@ jobs:
       - name: Upload ISO
         uses: actions/upload-artifact@v4
         with:
-          name: custom-os-drivers-ui
+          name: custom-os-terminal
           path: custom-os.iso
