@@ -1,57 +1,15 @@
-name: Build Custom OS
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+name: Build CustomOS
+on: [push, workflow_dispatch]
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install host tools
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq             build-essential bc bison flex cpio rsync file             libncurses-dev libssl-dev libelf-dev             grub-pc-bin grub-efi-amd64-bin xorriso mtools dosfstools             wget
-
-      - name: Download Buildroot 2026.08
-        run: |
-          wget -q https://buildroot.org/downloads/buildroot-2026.08.tar.xz
-          tar -xf buildroot-2026.08.tar.xz
-
-      - name: Configure
-        run: |
-          cp custom-buildroot.defconfig buildroot-2026.08/.config
-          mkdir -p buildroot-2026.08/board/custom-os
-          cp board/custom-os/linux.fragment buildroot-2026.08/board/custom-os/linux.fragment
-          cp -r board/custom-os/rootfs-overlay buildroot-2026.08/board/custom-os/rootfs-overlay
-          cd buildroot-2026.08
-          make olddefconfig
-
-      - name: Build Linux userspace
-        run: |
-          cd buildroot-2026.08
-          make -j$(nproc)
-
-      - name: Create bootable ISO
-        run: |
-          rm -rf iso
-          mkdir -p iso/boot/grub iso/EFI/BOOT
-          cp buildroot-2026.08/output/images/bzImage iso/bzImage
-          cp buildroot-2026.08/output/images/rootfs.cpio.gz iso/rootfs.cpio.gz
-          cp boot/grub/grub.cfg iso/boot/grub/grub.cfg
-          grub-mkrescue -o custom-os.iso iso
-
-      - name: Validate
-        run: |
-          test -s custom-os.iso
-          test -s iso/bzImage
-          test -s iso/rootfs.cpio.gz
-          ls -lh custom-os.iso iso/bzImage iso/rootfs.cpio.gz
-
-      - name: Upload ISO
-        uses: actions/upload-artifact@v4
-        with:
-          name: custom-os-linux-terminal
-          path: custom-os.iso
+ build:
+  runs-on: ubuntu-latest
+  steps:
+  - uses: actions/checkout@v4
+  - run: sudo apt-get update && sudo apt-get install -y gcc-multilib binutils grub-pc-bin grub-common xorriso
+  - run: make
+  - run: make iso
+  - run: test -s custom-os.iso
+  - uses: actions/upload-artifact@v4
+    with:
+     name: custom-os
+     path: custom-os.iso

@@ -1,0 +1,2 @@
+#include "terminal.h"
+static volatile unsigned short*v=(unsigned short*)0xB8000; static unsigned r,c; static void p(char x,unsigned X,unsigned Y){v[Y*80+X]=0x0F00|(unsigned char)x;} void terminal_init(void){terminal_clear();} void terminal_clear(void){for(unsigned y=0;y<25;y++)for(unsigned x=0;x<80;x++)p(' ',x,y);r=c=0;} void terminal_putc(char x){if(x=='\n'){c=0;if(++r==25)r=24;return;}p(x,c,r);if(++c==80){c=0;if(++r==25)r=24;}} void terminal_write(const char*s){while(*s)terminal_putc(*s++);} void terminal_backspace(void){if(c){--c;p(' ',c,r);}}
