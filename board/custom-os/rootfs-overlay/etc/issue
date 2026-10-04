@@ -1,0 +1,13 @@
+Custom OS
+Linux kernel + Buildroot userspace
+Text terminal only
+Chromebook/UTM target
+
+Python:
+  python3 --version
+  python3 -m pip --version
+
+Networking:
+  connmanctl
+  iw dev
+  ip link

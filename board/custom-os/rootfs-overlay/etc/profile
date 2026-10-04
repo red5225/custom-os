@@ -1,0 +1,4 @@
+export PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+export PYTHONUNBUFFERED=1
+alias python=python3
+alias pip="python3 -m pip"
