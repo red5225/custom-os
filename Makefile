@@ -14,6 +14,6 @@ iso: custom-os.elf
 	mkdir -p iso/boot/grub
 	cp custom-os.elf iso/boot/custom-os.elf
 	cp boot/grub/grub.cfg iso/boot/grub/grub.cfg
-	grub-mkrescue -o custom-os.iso iso
+	grub-mkrescue -o custom-os.iso iso -- -as mkisofs
 clean:
 	rm -rf iso custom-os.elf custom-os.iso $(OBJ)
