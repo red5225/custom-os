@@ -9,16 +9,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y gcc-multilib binutils grub-pc-bin grub-common xorriso mtools dosfstools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib binutils grub-pc-bin grub-common xorriso mtools dosfstools qemu-system-x86
       - name: Build kernel
         run: make
       - name: Build ISO
         run: make iso
-      - name: Validate ISO
+      - name: Validate ISO structure
         run: |
           test -s custom-os.iso
-          file custom-os.iso
           grub-file --is-x86-multiboot2 custom-os.elf
+          file custom-os.iso
+          sha256sum custom-os.iso
+      - name: Boot smoke test
+        run: |
+          timeout 8s qemu-system-i386 -cdrom custom-os.iso -display none -serial stdio -no-reboot -no-shutdown || test $? -eq 124
       - uses: actions/upload-artifact@v4
         with:
           name: custom-os
