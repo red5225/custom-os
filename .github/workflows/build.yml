@@ -10,15 +10,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y gcc-multilib binutils grub-pc-bin grub-common xorriso mtools dosfstools
-      - name: Build custom kernel
+      - name: Build kernel
         run: make
       - name: Build ISO
         run: make iso
-      - name: Validate
+      - name: Validate ISO
         run: |
           test -s custom-os.iso
-          grub-file --is-x86-multiboot2 custom-os.elf
           file custom-os.iso
+          grub-file --is-x86-multiboot2 custom-os.elf
       - uses: actions/upload-artifact@v4
         with:
           name: custom-os

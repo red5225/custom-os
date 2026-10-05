@@ -13,10 +13,8 @@ static void shell(void){
         else terminal_putc((char)c);
     }
 }
-
 void kmain(unsigned long magic,unsigned long info){
-    terminal_init();
-    terminal_clear();
+    terminal_init();terminal_clear();
     terminal_write("================================\n");
     terminal_write("          CustomOS\n");
     terminal_write("================================\n");
@@ -24,14 +22,9 @@ void kmain(unsigned long magic,unsigned long info){
     terminal_write("Linux parts: separate + credited\n");
     terminal_write("Boot: Multiboot2\n");
     if(magic!=0x36d76289)terminal_write("Boot warning\n");
-
     ui_bind(info);
-    if(ui_available()){
-        ui_run();
-        shell();
-    }else{
-        keyboard_init();
-        terminal_write("Framebuffer unavailable; using terminal.\n");
-        shell();
-    }
+    if(ui_available())ui_run();
+    keyboard_init();
+    terminal_write("Framebuffer unavailable or UI closed.\n");
+    shell();
 }

@@ -20,6 +20,8 @@ iso: custom-os.elf
 	cp custom-os.elf iso/boot/custom-os.elf
 	cp boot/grub/grub.cfg iso/boot/grub/grub.cfg
 	grub-mkrescue -o custom-os.iso iso -- -as mkisofs
+	grub-file --is-x86-multiboot2 custom-os.elf
+	test -s custom-os.iso
 
 clean:
 	rm -rf iso custom-os.elf custom-os.iso $(OBJ)

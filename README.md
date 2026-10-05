@@ -1,18 +1,18 @@
 # CustomOS
 
-A small custom x86 OS with its own kernel, terminal, boot flow, PS/2 mouse support, and a minimal framebuffer desktop.
+CustomOS is a small custom freestanding x86 operating system. It is not a Linux distribution and does not use the Linux kernel.
 
-## Current
-- Custom freestanding 32-bit kernel
-- Multiboot2 boot
+## Current build
+- Custom 32-bit kernel
+- GRUB Multiboot2 boot
 - VGA terminal fallback
 - PS/2 keyboard
-- PS/2 mouse polling
-- Minimal framebuffer UI with mouse cursor
+- PS/2 mouse cursor support when firmware exposes the PS/2 controller
+- Minimal framebuffer desktop when GRUB provides a 32-bit framebuffer
+- Automatic terminal fallback
 - Linux-derived hardware work kept separate and credited
 
 ## Hardware note
-The current kernel is 32-bit and the mouse driver targets PS/2. This is useful in UTM and older PC-style hardware, but a modern Chromebook normally needs x86_64 UEFI plus USB HID support. That is the next Chromebook hardware milestone.
+UTM can emulate the PS/2 devices used by the current build. Modern Chromebooks generally expose USB HID devices instead, so Chromebook support needs the next hardware layer: x86_64/UEFI + USB host controller + USB HID.
 
-## Build
-GitHub Actions builds `custom-os.iso`.
+The current ISO is therefore a development build for UTM/legacy x86 testing, not yet a guaranteed Chromebook image.
