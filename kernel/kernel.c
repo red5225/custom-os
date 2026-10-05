@@ -7,9 +7,9 @@ static void shell(void){
     terminal_write("\nCustomOS> ");
     for(;;){
         int c=keyboard_getchar();
-        if(c<0) continue;
-        if(c==10) terminal_write("\nCustomOS> ");
-        else if(c==8) terminal_backspace();
+        if(c<0)continue;
+        if(c==10)terminal_write("\nCustomOS> ");
+        else if(c==8)terminal_backspace();
         else terminal_putc((char)c);
     }
 }
@@ -23,11 +23,12 @@ void kmain(unsigned long magic,unsigned long info){
     terminal_write("Custom kernel: ONLINE\n");
     terminal_write("Linux parts: separate + credited\n");
     terminal_write("Boot: Multiboot2\n");
-    if(magic!=0x36d76289) terminal_write("Boot warning\n");
+    if(magic!=0x36d76289)terminal_write("Boot warning\n");
 
     ui_bind(info);
     if(ui_available()){
         ui_run();
+        shell();
     }else{
         keyboard_init();
         terminal_write("Framebuffer unavailable; using terminal.\n");

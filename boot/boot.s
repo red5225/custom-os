@@ -4,7 +4,7 @@ header_start:
 .long 0xe85250d6
 .long 0
 .long header_end-header_start
-.long -(0xe85250d6 + (header_end-header_start))
+.long -(0xe85250d6 + 0 + (header_end-header_start))
 .align 8
 .short 5
 .short 0
