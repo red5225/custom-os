@@ -1,19 +1,25 @@
 CC=gcc
 CFLAGS=-m32 -ffreestanding -fno-pie -fno-stack-protector -nostdlib -nostdinc -Wall -Wextra -O2
-OBJ=boot/boot.o kernel/kernel.o kernel/terminal.o kernel/keyboard.o
+OBJ=boot/boot.o kernel/kernel.o kernel/terminal.o kernel/keyboard.o kernel/mouse.o kernel/ui.o
+
 all: custom-os.elf
+
 boot/boot.o: boot/boot.s
 	as --32 $< -o $@
+
 kernel/%.o: kernel/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
+
 custom-os.elf: $(OBJ) linker.ld
 	ld -m elf_i386 -T linker.ld $(OBJ) -o $@
 	grub-file --is-x86-multiboot2 $@
+
 iso: custom-os.elf
 	rm -rf iso custom-os.iso
 	mkdir -p iso/boot/grub
 	cp custom-os.elf iso/boot/custom-os.elf
 	cp boot/grub/grub.cfg iso/boot/grub/grub.cfg
 	grub-mkrescue -o custom-os.iso iso -- -as mkisofs
+
 clean:
 	rm -rf iso custom-os.elf custom-os.iso $(OBJ)

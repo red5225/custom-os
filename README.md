@@ -1,5 +1,18 @@
 # CustomOS
 
-A hybrid operating system: custom kernel + custom userspace architecture, with selected Linux-derived hardware components kept separate and credited. It is not a Linux distribution.
+A small custom x86 OS with its own kernel, terminal, boot flow, and minimal framebuffer desktop.
 
-Current: custom x86 kernel, Multiboot2 boot, VGA terminal, PS/2 keyboard. Roadmap: memory, interrupts, processes, filesystem, USB, networking, adapted Wi-Fi drivers, Python runtime, optional GUI.
+## Current
+- Custom freestanding 32-bit kernel
+- Multiboot2 boot
+- VGA terminal fallback
+- PS/2 keyboard
+- PS/2 mouse polling
+- Minimal framebuffer UI with mouse cursor
+- Linux-derived hardware work kept separate and credited
+
+## Hardware note
+The current kernel is 32-bit. It can boot in UTM, but a modern Chromebook normally needs a 64-bit UEFI boot path plus USB HID support. The next hardware milestone is x86_64 + UEFI + USB.
+
+## Build
+GitHub Actions builds `custom-os.iso`.
