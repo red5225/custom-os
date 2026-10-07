@@ -1,24 +1,27 @@
-fn prompt(){print "\nXCL> ";}
-fn command(cmd){
-if cmd == "help" {
-call show_help;
-} else if cmd == "about" {
-call show_about;
-} else if cmd == "ver" {
-call show_version;
-} else if cmd == "lang" {
-call show_language;
-} else if cmd == "status" {
-call show_status;
-} else if cmd == "credits" {
-call show_credits;
-} else if cmd == "clear" {
-clear;
-} else if cmd == "reboot" {
-print "Reboot is not enabled in this development build.\n";
-} else if cmd == "" {
-} else {
-print "Unknown command. Type 'help'.\n";
+fn prompt() {
+    print "\nXCL> ";
 }
-call prompt;
+
+fn command(cmd) {
+    if cmd == "help" {
+        call show_help;
+    } else if cmd == "about" {
+        call show_about;
+    } else if cmd == "ver" {
+        call show_version;
+    } else if cmd == "lang" {
+        call show_language;
+    } else if cmd == "status" {
+        call show_status;
+    } else if cmd == "credits" {
+        call show_credits;
+    } else if cmd == "clear" {
+        clear;
+    } else if cmd == "reboot" {
+        print "Reboot is not enabled in this development build.\n";
+    } else if cmd == "" {
+    } else {
+        print "Unknown command. Type 'help'.\n";
+    }
+    call prompt;
 }

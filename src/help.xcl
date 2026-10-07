@@ -1,17 +1,25 @@
-fn show_help(){
-print "help    - show commands\n";
-print "about   - system description\n";
-print "ver     - version information\n";
-print "lang    - XCL language information\n";
-print "status  - runtime status\n";
-print "credits - project credits\n";
-print "clear   - clear terminal\n";
-print "reboot  - reserved reboot command\n";
+fn show_help() {
+    print "help    - show commands\n";
+    print "about   - system description\n";
+    print "ver     - version information\n";
+    print "lang    - XCL language information\n";
+    print "status  - runtime status\n";
+    print "credits - project credits\n";
+    print "clear   - clear terminal\n";
+    print "reboot  - reserved reboot command\n";
 }
-fn show_about(){
-print "CustomOS is a small custom terminal operating system.\n";
-print "The shell and OS-facing logic are written in XCL.\n";
-print "C and assembly are kept at the lowest hardware boundary.\n";
+
+fn show_about() {
+    print "CustomOS is a small custom terminal operating system.\n";
+    print "The shell and OS-facing logic are written in XCL.\n";
+    print "C and assembly are kept at the lowest hardware boundary.\n";
 }
-fn show_version(){print "CustomOS 0.4 / XCL 0.1\n";}
-fn show_language(){print "XCL = eXecutable Core Language.\n";print "XCL source is compiled during the OS build.\n";}
+
+fn show_version() {
+    print "CustomOS 0.4 / XCL 0.1\n";
+}
+
+fn show_language() {
+    print "XCL = eXecutable Core Language.\n";
+    print "XCL source is compiled during the OS build.\n";
+}
