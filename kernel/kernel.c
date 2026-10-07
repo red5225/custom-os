@@ -1,32 +1,40 @@
 #include "terminal.h"
 #include "keyboard.h"
-#include "mouse.h"
-#include "ui.h"
+
+extern void boot(void);
+extern void command(const char *cmd);
+extern void prompt(void);
 
 static void shell(void){
-	terminal_write("\nCustomOS> ");
-	for(;;){
-		int c=keyboard_getchar();
-		if(c<0)continue;
-		if(c==10)terminal_write("\nCustomOS> ");
-		else if(c==8)terminal_backspace();
-		else terminal_putc((char)c);
-	}
+    char line[128];
+    unsigned int len=0;
+    prompt();
+    for(;;){
+        int c=keyboard_getchar();
+        if(c<0) continue;
+        if(c==10){
+            line[len]=0;
+            command(line);
+            len=0;
+            continue;
+        }
+        if(c==8){
+            if(len){ --len; terminal_backspace(); }
+            continue;
+        }
+        if(c>=32 && c<127 && len<sizeof(line)-1){
+            line[len++]=(char)c;
+            terminal_putc((char)c);
+        }
+    }
 }
+
 void kmain(unsigned long magic,unsigned long info){
-	terminal_init();
-	terminal_clear();
-	terminal_write("================================\n");
-	terminal_write("          CustomOS\n");
-	terminal_write("================================\n");
-	terminal_write("Custom kernel: ONLINE\n");
-	terminal_write("Mouse: PS/2 ready\n");
-	terminal_write("Python: not installed yet\n");
-	terminal_write("Linux parts: separate + credited\n");
-	if(magic!=0x36d76289)terminal_write("Boot warning\n");
-	ui_bind(info);
-	if(ui_available())ui_run();
-	keyboard_init();
-	terminal_write("Framebuffer unavailable; using terminal.\n");
-	shell();
+    (void)info;
+    terminal_init();
+    terminal_clear();
+    boot();
+    if(magic!=0x36d76289) terminal_write("Boot warning: unexpected Multiboot2 magic.\n");
+    keyboard_init();
+    shell();
 }

@@ -1,0 +1,39 @@
+# Native OS Language source
+fn boot() {
+    print "========================================\n";
+    print "             CustomOS / NOL\n";
+    print "========================================\n";
+    print "Custom kernel: ONLINE\n";
+    print "Native language: NOL\n";
+    print "Linux kernel: NOT USED\n";
+    print "Type 'help' for commands.\n";
+}
+fn prompt() {
+    print "\nNOL> ";
+}
+fn command(cmd) {
+    if cmd == "help" {
+        print "help    - show commands\n";
+        print "about   - system information\n";
+        print "ver     - show version\n";
+        print "clear   - clear terminal\n";
+        print "lang    - describe NOL\n";
+        print "reboot  - reserved for hardware reboot\n";
+    } else if cmd == "about" {
+        print "CustomOS is a small custom terminal operating system.\n";
+        print "The shell and OS-facing logic are written in NOL.\n";
+    } else if cmd == "ver" {
+        print "CustomOS 0.2 / NOL 0.1\n";
+    } else if cmd == "lang" {
+        print "NOL = Native OS Language.\n";
+        print "It is compiled during the OS build into freestanding code.\n";
+    } else if cmd == "clear" {
+        clear;
+    } else if cmd == "reboot" {
+        print "Reboot is not enabled in this development build.\n";
+    } else if cmd == "" {
+    } else {
+        print "Unknown command. Type 'help'.\n";
+    }
+    call prompt;
+}

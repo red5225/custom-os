@@ -1,11 +1,17 @@
 CC=gcc
 CFLAGS=-m32 -ffreestanding -fno-pie -fno-stack-protector -nostdlib -nostdinc -Wall -Wextra -O2
-OBJ=boot/boot.o kernel/kernel.o kernel/terminal.o kernel/keyboard.o kernel/mouse.o kernel/ui.o
+OBJ=boot/boot.o kernel/kernel.o kernel/terminal.o kernel/keyboard.o kernel/nol_runtime.o kernel/nol_generated.o
 
 all: custom-os.elf
 
+kernel/nol_generated.c: src/shell.nol tools/nolc.py
+	python3 tools/nolc.py src/shell.nol kernel/nol_generated.c
+
 boot/boot.o: boot/boot.s
 	as --32 $< -o $@
+
+kernel/nol_generated.o: kernel/nol_generated.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 kernel/%.o: kernel/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -21,7 +27,7 @@ iso: custom-os.elf
 	cp boot/grub/grub.cfg iso/boot/grub/grub.cfg
 	grub-mkrescue -o custom-os.iso iso -- -as mkisofs
 	test -s custom-os.iso
-	xorriso -indev custom-os.iso -toc >/dev/null
+	xorriso -indev custom-os.iso -toc > /dev/null
 
 clean:
-	rm -rf iso custom-os.elf custom-os.iso $(OBJ)
+	rm -rf iso custom-os.elf custom-os.iso kernel/nol_generated.c $(OBJ)
