@@ -1,13 +1,27 @@
 # CustomOS
 
-CustomOS is a small terminal-first operating system built around its own language: XCL (eXecutable Core Language).
+CustomOS is a small, terminal-first operating system built from its own kernel, terminal, shell, and XCL source code.
 
-XCL is the main language. The OS-facing source is now .xcl under src/.
+## Boot targets
 
-C and assembly are intentionally limited to boot, hardware primitives, and the XCL bootstrap boundary.
+The project now produces two boot artifacts:
 
-There is no Linux kernel and no Python dependency in the OS or GitHub Actions build.
+- `custom-os.iso` — BIOS/Multiboot2 image for UTM/QEMU and legacy firmware.
+- `custom-os-uefi.img` — GPT/FAT32 removable-disk image with `EFI/BOOT/BOOTX64.EFI` for modern UEFI machines such as compatible Chromebooks.
 
-Architecture: GRUB -> custom boot -> custom kernel -> XCL -> terminal.
+The UEFI image uses GRUB's x86_64 EFI loader and then loads the same CustomOS Multiboot2 kernel. The kernel itself remains custom and is not Linux.
 
-Eventually the bootstrap compiler will be replaced with an XCL compiler that emits native machine code.
+## XCL
+
+Most OS-facing code is authored in **XCL — eXecutable Core Language**.
+
+The current XCL compiler is a small C bootstrap compiler. C and assembly are kept at the lowest hardware/boot boundary while XCL becomes the main language.
+
+## Roadmap
+
+1. Expand XCL variables, types, control flow, memory operations, and modules.
+2. Replace the C bootstrap compiler with a native XCL compiler.
+3. Add memory management and interrupts.
+4. Add processes, syscalls, and a filesystem.
+5. Add USB, networking, and selected hardware drivers.
+6. Add x86_64 kernel execution while preserving the XCL-first architecture.
