@@ -1,13 +1,47 @@
 # NOL — Native OS Language
 
-NOL is the programming language being built specifically for CustomOS.
+NOL is the main source language of CustomOS.
 
-The goal is for CustomOS to eventually be implemented mostly in NOL, with only tiny architecture-specific pieces remaining in assembly and hardware glue.
+## Current structure
 
-Example:
+Most OS-facing behavior is stored in .nol files under src:
 
-fn hello() {
-    print "hello\n";
-}
+- src/boot.nol — boot banner
+- src/shell.nol — command dispatcher
+- src/help.nol — user-facing commands
+- src/system.nol — status and credits
+- src/terminal.nol — terminal personality
 
-The bootstrap compiler currently translates NOL into freestanding C during the build. This is temporary. The planned compiler is a real NOL compiler with its own intermediate representation and native backend.
+The remaining C and assembly is the small hardware boundary: boot entry, VGA terminal primitive, PS/2 keyboard input, and the bootstrap runtime.
+
+## Build model
+
+There is no Python compiler or Python build dependency.
+
+A tiny C bootstrap compiler, tools/nolc.c, translates the current NOL subset into freestanding C during the host build. This is temporary compiler infrastructure, not the OS language.
+
+The intended evolution is:
+
+NOL source -> NOL lexer/parser -> NOL IR -> native x86 code
+
+That lets the bootstrap C compiler eventually disappear too.
+
+## Current NOL subset
+
+- functions
+- string output
+- command matching
+- function calls
+- terminal clear/backspace operations
+- comments
+
+## Next language work
+
+1. lexer and parser
+2. AST and NOL IR
+3. integers and variables
+4. loops and richer expressions
+5. memory and pointers
+6. native x86 backend
+7. NOL standard library
+8. move more kernel services from C into NOL

@@ -1,0 +1,28 @@
+# User-facing command descriptions.
+
+fn show_help() {
+    print "help    - show commands\n";
+    print "about   - system description\n";
+    print "ver     - version information\n";
+    print "lang    - NOL language information\n";
+    print "status  - runtime status\n";
+    print "credits - third-party and project credits\n";
+    print "clear   - clear terminal\n";
+    print "reboot  - reserved reboot command\n";
+}
+
+fn show_about() {
+    print "CustomOS is a small custom terminal operating system.\n";
+    print "The shell and OS-facing logic are written in NOL.\n";
+    print "C and assembly are kept at the lowest hardware boundary.\n";
+}
+
+fn show_version() {
+    print "CustomOS 0.3 / NOL 0.2\n";
+}
+
+fn show_language() {
+    print "NOL = Native OS Language.\n";
+    print "NOL source is compiled during the OS build.\n";
+    print "The long-term compiler target is NOL IR to native code.\n";
+}

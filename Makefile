@@ -1,11 +1,18 @@
+HOSTCC ?= cc
 CC=gcc
 CFLAGS=-m32 -ffreestanding -fno-pie -fno-stack-protector -nostdlib -nostdinc -Wall -Wextra -O2
 OBJ=boot/boot.o kernel/kernel.o kernel/terminal.o kernel/keyboard.o kernel/nol_runtime.o kernel/nol_generated.o
+NOL_SRCS=$(wildcard src/*.nol)
+NOLC=build/nolc
 
 all: custom-os.elf
 
-kernel/nol_generated.c: src/shell.nol tools/nolc.py
-	python3 tools/nolc.py src/shell.nol kernel/nol_generated.c
+build/nolc: tools/nolc.c
+	mkdir -p build
+	$(HOSTCC) -std=c99 -O2 -Wall -Wextra $< -o $@
+
+kernel/nol_generated.c: $(NOL_SRCS) build/nolc
+	$(NOLC) $(NOL_SRCS) $@
 
 boot/boot.o: boot/boot.s
 	as --32 $< -o $@
@@ -21,7 +28,7 @@ custom-os.elf: $(OBJ) linker.ld
 	grub-file --is-x86-multiboot2 $@
 
 iso: custom-os.elf
-	rm -rf iso custom-os.iso
+	rm -rf iso
 	mkdir -p iso/boot/grub
 	cp custom-os.elf iso/boot/custom-os.elf
 	cp boot/grub/grub.cfg iso/boot/grub/grub.cfg
@@ -30,4 +37,4 @@ iso: custom-os.elf
 	xorriso -indev custom-os.iso -toc > /dev/null
 
 clean:
-	rm -rf iso custom-os.elf custom-os.iso kernel/nol_generated.c $(OBJ)
+	rm -rf iso custom-os.elf custom-os.iso kernel/nol_generated.c build

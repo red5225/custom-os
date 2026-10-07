@@ -1,0 +1,9 @@
+# Terminal personality owned by NOL.
+
+fn terminal_ready() {
+    print "NOL terminal services loaded.\n";
+}
+
+fn terminal_about() {
+    print "The terminal command layer is authored in .nol files.\n";
+}

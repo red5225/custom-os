@@ -1,0 +1,16 @@
+# System information and diagnostics written in NOL.
+
+fn show_status() {
+    print "status: ONLINE\n";
+    print "kernel: custom freestanding x86\n";
+    print "terminal: VGA text mode\n";
+    print "input: PS/2 keyboard\n";
+    print "language: NOL\n";
+    print "build compiler: C bootstrap only\n";
+}
+
+fn show_credits() {
+    print "CustomOS and NOL code: project-authored.\n";
+    print "GRUB: bootloader, retained under its upstream license.\n";
+    print "Linux-derived drivers: kept separate and are not the kernel.\n";
+}
