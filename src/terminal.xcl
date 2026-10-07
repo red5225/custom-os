@@ -1,0 +1,2 @@
+fn terminal_ready(){print "XCL terminal services loaded.\n";}
+fn terminal_about(){print "Terminal command layer is authored in .xcl files.\n";}

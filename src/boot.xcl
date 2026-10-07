@@ -1,0 +1,11 @@
+fn boot(){
+print "==============================================\n";
+print "              CustomOS / XCL\n";
+print "==============================================\n";
+print "Custom kernel: ONLINE\n";
+print "XCL runtime: ONLINE\n";
+print "Linux kernel: NOT USED\n";
+print "Most OS-facing code: XCL\n";
+print "Type 'help' for commands.\n";
+call prompt;
+}

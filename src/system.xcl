@@ -1,0 +1,12 @@
+fn show_status(){
+print "status: ONLINE\n";
+print "kernel: custom freestanding x86\n";
+print "terminal: VGA text mode\n";
+print "input: PS/2 keyboard\n";
+print "language: XCL\n";
+}
+fn show_credits(){
+print "CustomOS and XCL code: project-authored.\n";
+print "GRUB: bootloader, retained under its upstream license.\n";
+print "Linux-derived drivers: kept separate and are not the kernel.\n";
+}
