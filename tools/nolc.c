@@ -14,17 +14,43 @@ static char *trim(char *s) {
     *e = 0;
     return s;
 }
+
+static int parse_fn_header(const char *line, char *name, size_t name_size, int *argc) {
+    if (strncmp(line, "fn ", 3) != 0) return 0;
+
+    const char *p = line + 3;
+    while (*p && isspace((unsigned char)*p)) p++;
+
+    size_t n = 0;
+    while (p[n] && p[n] != '(' && !isspace((unsigned char)p[n])) n++;
+    if (!n || n >= name_size) return 0;
+    memcpy(name, p, n);
+    name[n] = 0;
+
+    p += n;
+    while (*p && isspace((unsigned char)*p)) p++;
+    if (*p != '(') return 0;
+    p++;
+
+    const char *end = strchr(p, ')');
+    if (!end) return 0;
+
+    size_t arg_len = (size_t)(end - p);
+    while (arg_len && isspace((unsigned char)p[arg_len - 1])) arg_len--;
+    *argc = arg_len ? 1 : 0;
+    return 1;
+}
+
 static int is_fn(const char *s) { return strncmp(s, "fn ", 3) == 0; }
 
 static void collect_fn(const char *line) {
-    char n[64], a[128];
-    int ok = sscanf(line, "fn %63[^ (] (%127[^)])", n, a) == 2 ||
-             sscanf(line, "fn %63[^ (](%127[^)])", n, a) == 2;
-    if (!ok || fn_count >= 256) return;
+    char n[64];
+    int argc = 0;
+    if (!parse_fn_header(line, n, sizeof(n), &argc) || fn_count >= 256) return;
+
     strncpy(fns[fn_count].name, n, sizeof(fns[fn_count].name) - 1);
     fns[fn_count].name[sizeof(fns[fn_count].name) - 1] = 0;
-    char *x = trim(a);
-    fns[fn_count].argc = (*x && strcmp(x, "void") != 0) ? 1 : 0;
+    fns[fn_count].argc = argc;
     fn_count++;
 }
 
@@ -58,9 +84,11 @@ static int parse_if(FILE *out, char *s) {
     if (strncmp(s, "if cmd == ", 10) == 0) prefix = "if";
     else if (strncmp(s, "else if cmd == ", 15) == 0) prefix = "else if";
     if (!prefix) return 0;
+
     char *q = strchr(s, '"');
     char *e = q ? strrchr(q + 1, '"') : NULL;
     if (!q || !e) return -1;
+
     fprintf(out, "%s (nol_streq(cmd, ", prefix);
     emit_string(out, q + 1, e);
     fputs(")) {\n", out);
@@ -70,6 +98,7 @@ static int parse_if(FILE *out, char *s) {
 static int compile_file(FILE *out, const char *path) {
     FILE *in = fopen(path, "r");
     if (!in) { fprintf(stderr, "nolc: cannot open %s\n", path); return 0; }
+
     char buf[4096];
     int in_fn = 0;
 
@@ -78,19 +107,22 @@ static int compile_file(FILE *out, const char *path) {
         if (!*s || *s == '#') continue;
 
         if (is_fn(s)) {
-            char n[64], a[128];
-            int ok = sscanf(s, "fn %63[^ (] (%127[^)])", n, a) == 2 ||
-                     sscanf(s, "fn %63[^ (](%127[^)])", n, a) == 2;
-            if (!ok) { fprintf(stderr, "nolc: bad function header in %s\n", path); fclose(in); return 0; }
-            char *x = trim(a);
-            fprintf(out, "void %s(%s) {\n", n, *x ? "const char *cmd" : "void");
+            char n[64];
+            int argc = 0;
+            if (!parse_fn_header(s, n, sizeof(n), &argc)) {
+                fprintf(stderr, "nolc: bad function header in %s: %s\n", path, s);
+                fclose(in);
+                return 0;
+            }
+            fprintf(out, "void %s(%s) {\n", n, argc ? "const char *cmd" : "void");
             in_fn = 1;
             continue;
         }
 
         if (!in_fn) {
             fprintf(stderr, "nolc: statement outside function in %s: %s\n", path, s);
-            fclose(in); return 0;
+            fclose(in);
+            return 0;
         }
 
         int r = parse_if(out, s);
@@ -126,15 +158,23 @@ static int compile_file(FILE *out, const char *path) {
                 fputs("else if (nol_streq(cmd, ", out);
                 emit_string(out, q + 1, e);
                 fputs(")) {\n", out);
-            } else fputs("else {\n", out);
+            } else {
+                fputs("else {\n", out);
+            }
             continue;
         }
 
         fprintf(stderr, "nolc: unsupported NOL statement in %s: %s\n", path, s);
-        fclose(in); return 0;
+        fclose(in);
+        return 0;
     }
 
-    if (in_fn) { fprintf(stderr, "nolc: unterminated function in %s\n", path); fclose(in); return 0; }
+    if (in_fn) {
+        fprintf(stderr, "nolc: unterminated function in %s\n", path);
+        fclose(in);
+        return 0;
+    }
+
     fclose(in);
     return 1;
 }
@@ -173,6 +213,7 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
+
     fclose(out);
     return 0;
 }
