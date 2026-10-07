@@ -24,7 +24,7 @@ kernel/%.o: kernel/%.c
 
 custom-os.elf: $(OBJ) linker.ld
 	ld -m elf_i386 -T linker.ld $(OBJ) -o $@
-	grub-file --is-x86-multiboot2 $@
+	grub-file --is-x86-multiboot $@
 
 iso: custom-os.elf
 	rm -rf iso
@@ -47,9 +47,11 @@ uefi: custom-os.elf
 	parted -s custom-os-uefi.img mkpart ESP fat32 1MiB 127MiB
 	parted -s custom-os-uefi.img set 1 esp on
 	LOOP=$$(sudo losetup --find --show --partscan custom-os-uefi.img); \
-	sudo mkfs.fat -F 32 "$$LOOP" >/dev/null; \
+	PART="$$LOOP"p1; \
+	sudo udevadm settle; \
+	sudo mkfs.fat -F 32 "$$PART" >/dev/null; \
 	sudo mkdir -p /mnt/customos-esp; \
-	sudo mount "$$LOOP" /mnt/customos-esp; \
+	sudo mount "$$PART" /mnt/customos-esp; \
 	sudo cp -a uefi-root/. /mnt/customos-esp/; \
 	sudo sync; \
 	sudo umount /mnt/customos-esp; \

@@ -1,16 +1,8 @@
 .section .multiboot
-.align 8
-header_start:
-.long 0xe85250d6
+.align 4
+.long 0x1BADB002
 .long 0
-.long header_end-header_start
-.long -(0xe85250d6 + 0 + (header_end-header_start))
-
-.align 8
-.short 0
-.short 0
-.long 8
-header_end:
+.long -(0x1BADB002 + 0)
 
 .section .text
 .global _start

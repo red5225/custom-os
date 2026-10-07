@@ -30,7 +30,7 @@ jobs:
           test -s custom-os.iso
           test -s custom-os-uefi.img
           test -s build/BOOTX64.EFI
-          grub-file --is-x86-multiboot2 custom-os.elf
+          grub-file --is-x86-multiboot custom-os.elf
           grub-file --is-x86_64-efi build/BOOTX64.EFI
           xorriso -indev custom-os.iso -toc >/dev/null
           file custom-os-uefi.img

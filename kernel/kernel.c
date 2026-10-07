@@ -3,7 +3,6 @@
 
 extern void boot(void);
 extern void command(const char *cmd);
-extern void prompt(void);
 
 static void input_loop(void) {
     char line[128];
@@ -42,8 +41,8 @@ void kmain(unsigned long magic, unsigned long info) {
     terminal_clear();
     boot();
 
-    if (magic != 0x36d76289)
-        terminal_write("Boot warning: unexpected Multiboot2 magic.\n");
+    if (magic != 0x2BADB002UL)
+        terminal_write("Boot warning: unexpected Multiboot magic.\n");
 
     keyboard_init();
     input_loop();
