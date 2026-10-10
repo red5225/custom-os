@@ -27,7 +27,7 @@ $(BUILD)/loader.so: $(BUILD)/loader.o
 	$(LD) -nostdlib -znocombreloc -T $(EFI_LDS) -shared -Bsymbolic -L$(EFI_LIBDIR) -L$(EFI_GNUEFI_LIBDIR) $< -lefi -lgnuefi -o $@
 
 $(BUILD)/BOOTX64.EFI: $(BUILD)/loader.so
-	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .reloc -O efi-app-x86_64 --subsystem=10 $< $@
+	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .reloc --target=efi-app-x86_64 --subsystem=10 $< $@
 	file $@
 	objdump -p $@ | head -40
 
