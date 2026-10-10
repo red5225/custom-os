@@ -2,6 +2,7 @@ SHELL := /bin/bash
 ROOT := $(CURDIR)
 BUILD := $(ROOT)/build
 ESP := $(BUILD)/esp
+OBJCOPY := objcopy
 EFI_INC := /usr/include/efi
 EFI_ARCH_INC := /usr/include/efi/x86_64
 EFI_LDS := /usr/lib/elf_x86_64_efi.lds
