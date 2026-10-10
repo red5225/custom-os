@@ -1,0 +1,2 @@
+# Populate with SHA-256 entries after image assembly.
+# Format: <sha256>  <relative-path-under-root>

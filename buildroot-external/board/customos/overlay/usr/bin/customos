@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+case "${1:-help}" in
+ help) echo "CustomOS commands: help about status python integrity apps" ;;
+ about) echo "CustomOS Linux Edition"; echo "Linux kernel + Buildroot userspace + CustomOS tools" ;;
+ status) uname -a; echo; head -n 5 /proc/meminfo; echo; df -h ;;
+ python) exec python3 ;;
+ integrity) exec /usr/bin/customos-integrity "${2:-/etc/customos/integrity.sha256}" "${3:-/}" ;;
+ apps) exec /usr/bin/customos-app "${2:-apps/example/app.json}" ;;
+ *) echo "customos: unknown command '$1' (try: customos help)" >&2; exit 2 ;;
+esac

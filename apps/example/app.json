@@ -1,0 +1,6 @@
+{
+  "name": "hello-customos",
+  "version": "0.1.0",
+  "entry": "main.py",
+  "permissions": ["user-files"]
+}

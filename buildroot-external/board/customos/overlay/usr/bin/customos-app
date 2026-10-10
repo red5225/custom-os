@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+"""Validate a minimal CustomOS app manifest without executing it."""
+import json,re,sys
+from pathlib import Path
+NAME=re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$")
+def main():
+    if len(sys.argv)!=2:
+        print("usage: customos-app MANIFEST.json",file=sys.stderr); return 2
+    path=Path(sys.argv[1])
+    try: data=json.loads(path.read_text(encoding="utf-8"))
+    except (OSError,json.JSONDecodeError) as exc:
+        print(f"{path}: {exc}",file=sys.stderr); return 2
+    if not isinstance(data,dict) or not {"name","version","entry","permissions"}<=data.keys():
+        print(f"{path}: requires name, version, entry, permissions",file=sys.stderr); return 2
+    if not isinstance(data["name"],str) or not NAME.fullmatch(data["name"]):
+        print(f"{path}: invalid name",file=sys.stderr); return 2
+    if not isinstance(data["version"],str) or not data["version"]:
+        print(f"{path}: invalid version",file=sys.stderr); return 2
+    entry=Path(data["entry"])
+    if entry.is_absolute() or ".." in entry.parts:
+        print(f"{path}: unsafe relative entry",file=sys.stderr); return 2
+    if not isinstance(data["permissions"],list) or not all(isinstance(x,str) for x in data["permissions"]):
+        print(f"{path}: permissions must be a list of strings",file=sys.stderr); return 2
+    print(f"VALID {data['name']} {data['version']} entry={entry}"); return 0
+if __name__=="__main__": raise SystemExit(main())
