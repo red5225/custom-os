@@ -10,7 +10,9 @@ EFI_LIBDIR := /usr/lib
 EFI_GNUEFI_LIBDIR := /usr/lib/gnuefi
 EFI_CFLAGS := -I$(EFI_INC) -I$(EFI_ARCH_INC) -DEFI_FUNCTION_WRAPPER -fpic -fshort-wchar -mno-red-zone -fno-stack-protector -fno-stack-check -fno-asynchronous-unwind-tables -fno-unwind-tables -O2
 DISK := $(BUILD)/milestone1.img
-ESP_OFFSET_BYTES := 1048576
+ESP_IMAGE := $(BUILD)/esp.img
+ESP_SECTORS := 126976
+ESP_OFFSET_SECTORS := 2048
 
 .PHONY: all clean test
 all: $(ESP)/EFI/BOOT/BOOTX64.EFI $(ESP)/kernel.elf $(DISK)
@@ -43,13 +45,16 @@ $(ESP)/kernel.elf: $(BUILD)/kernel.elf
 	cp $< $@
 
 $(DISK): $(ESP)/EFI/BOOT/BOOTX64.EFI $(ESP)/kernel.elf
-	rm -f $@
+	rm -f $@ $(ESP_IMAGE)
 	dd if=/dev/zero of=$@ bs=1M count=64 status=none
-	printf 'label: gpt\nunit: sectors\nsector-size: 512\nstart=2048,size=126976,type=uefi,name="NOL EFI System"\n' | sfdisk $@
-	mkfs.fat -F 32 --offset=2048 $@
-	mmd -i $@@@$(ESP_OFFSET_BYTES) ::/EFI ::/EFI/BOOT
-	mcopy -i $@@@$(ESP_OFFSET_BYTES) $(BUILD)/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
-	mcopy -i $@@@$(ESP_OFFSET_BYTES) $(BUILD)/kernel.elf ::/kernel.elf
+	printf 'label: gpt\nunit: sectors\nsector-size: 512\nstart=$(ESP_OFFSET_SECTORS),size=$(ESP_SECTORS),type=uefi,name="NOL EFI System"\n' | sfdisk $@
+	truncate -s $$(( $(ESP_SECTORS) * 512 )) $(ESP_IMAGE)
+	mkfs.fat -F 32 $(ESP_IMAGE)
+	mmd -i $(ESP_IMAGE) ::/EFI ::/EFI/BOOT
+	mcopy -i $(ESP_IMAGE) $(BUILD)/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
+	mcopy -i $(ESP_IMAGE) $(BUILD)/kernel.elf ::/kernel.elf
+	mdir -i $(ESP_IMAGE) ::/EFI/BOOT
+	dd if=$(ESP_IMAGE) of=$@ bs=512 seek=$(ESP_OFFSET_SECTORS) conv=notrunc status=none
 	fdisk -l $@
 
 clean:
