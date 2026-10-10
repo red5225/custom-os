@@ -9,9 +9,11 @@ EFI_LDS := /usr/lib/elf_x86_64_efi.lds
 EFI_LIBDIR := /usr/lib
 EFI_GNUEFI_LIBDIR := /usr/lib/gnuefi
 EFI_CFLAGS := -I$(EFI_INC) -I$(EFI_ARCH_INC) -DEFI_FUNCTION_WRAPPER -fpic -fshort-wchar -mno-red-zone -fno-stack-protector -fno-stack-check -fno-asynchronous-unwind-tables -fno-unwind-tables -O2
+DISK := $(BUILD)/milestone1.img
+ESP_OFFSET_BYTES := 1048576
 
 .PHONY: all clean test
-all: $(ESP)/EFI/BOOT/BOOTX64.EFI $(ESP)/kernel.elf $(BUILD)/milestone1.img
+all: $(ESP)/EFI/BOOT/BOOTX64.EFI $(ESP)/kernel.elf $(DISK)
 
 $(BUILD):
 	mkdir -p $@
@@ -40,12 +42,15 @@ $(ESP)/kernel.elf: $(BUILD)/kernel.elf
 	mkdir -p $(ESP)
 	cp $< $@
 
-$(BUILD)/milestone1.img: $(BUILD)/BOOTX64.EFI $(ESP)/EFI/BOOT/BOOTX64.EFI $(ESP)/kernel.elf
-	dd if=/dev/zero of=$@ bs=1M count=16 status=none
-	mkfs.fat -F 16 $@
-	mmd -i $@ ::/EFI ::/EFI/BOOT
-	mcopy -i $@ $(BUILD)/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
-	mcopy -i $@ $(BUILD)/kernel.elf ::/kernel.elf
+$(DISK): $(ESP)/EFI/BOOT/BOOTX64.EFI $(ESP)/kernel.elf
+	rm -f $@
+	dd if=/dev/zero of=$@ bs=1M count=64 status=none
+	printf 'label: gpt\nunit: sectors\nsector-size: 512\nstart=2048,size=126976,type=uefi,name="NOL EFI System"\n' | sfdisk $@
+	mkfs.fat -F 32 --offset=2048 $@
+	mmd -i $@@@$(ESP_OFFSET_BYTES) ::/EFI ::/EFI/BOOT
+	mcopy -i $@@@$(ESP_OFFSET_BYTES) $(BUILD)/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
+	mcopy -i $@@@$(ESP_OFFSET_BYTES) $(BUILD)/kernel.elf ::/kernel.elf
+	fdisk -l $@
 
 clean:
 	rm -rf $(BUILD)
@@ -58,7 +63,7 @@ test: all
 	if [[ -z "$$CODE" || -z "$$VARS_TEMPLATE" ]]; then echo 'OVMF firmware files not found under /usr/share'; find /usr/share -iname '*ovmf*' -maxdepth 4 -print; exit 2; fi; \
 	cp "$$VARS_TEMPLATE" $(BUILD)/OVMF_VARS.fd; \
 	rm -f $(BUILD)/serial.log; \
-	(timeout 15s qemu-system-x86_64 -machine q35 -m 256M -cpu qemu64 -drive if=pflash,format=raw,readonly=on,file="$$CODE" -drive if=pflash,format=raw,file=$(BUILD)/OVMF_VARS.fd -drive format=raw,file=$(BUILD)/milestone1.img -serial file:$(BUILD)/serial.log -display none -monitor none -no-reboot) >/dev/null 2>&1 || true; \
+	(timeout 15s qemu-system-x86_64 -machine q35 -m 256M -cpu qemu64 -drive if=pflash,format=raw,readonly=on,file="$$CODE" -drive if=pflash,format=raw,file=$(BUILD)/OVMF_VARS.fd -drive if=none,id=osdisk,format=raw,file=$(DISK) -device ide-hd,drive=osdisk,bootindex=1 -serial file:$(BUILD)/serial.log -display none -monitor none -no-reboot) >/dev/null 2>&1 || true; \
 	cat $(BUILD)/serial.log 2>/dev/null || true; \
 	grep -q 'NOL OS MILESTONE 1: kernel reached' $(BUILD)/serial.log || { echo 'QEMU smoke test failed: expected kernel serial marker not found'; exit 1; }; \
 	echo 'QEMU smoke test passed.'
