@@ -52,8 +52,10 @@ clean:
 
 test: all
 	@set -eu; \
-	CODE=/usr/share/OVMF/OVMF_CODE.fd; VARS_TEMPLATE=/usr/share/OVMF/OVMF_VARS.fd; \
-	if [[ ! -f "$$CODE" || ! -f "$$VARS_TEMPLATE" ]]; then echo 'OVMF firmware files not found'; exit 2; fi; \
+	CODE=$$(find /usr/share -name 'OVMF_CODE_4M.fd' -print -quit); \
+	VARS_TEMPLATE=$$(find /usr/share -name 'OVMF_VARS_4M.fd' -print -quit); \
+	if [[ -z "$$CODE" || -z "$$VARS_TEMPLATE" ]]; then CODE=$$(find /usr/share -name 'OVMF_CODE.fd' -print -quit); VARS_TEMPLATE=$$(find /usr/share -name 'OVMF_VARS.fd' -print -quit); fi; \
+	if [[ -z "$$CODE" || -z "$$VARS_TEMPLATE" ]]; then echo 'OVMF firmware files not found under /usr/share'; find /usr/share -iname '*ovmf*' -maxdepth 4 -print; exit 2; fi; \
 	cp "$$VARS_TEMPLATE" $(BUILD)/OVMF_VARS.fd; \
 	rm -f $(BUILD)/serial.log; \
 	(timeout 15s qemu-system-x86_64 -machine q35 -m 256M -cpu qemu64 -drive if=pflash,format=raw,readonly=on,file="$$CODE" -drive if=pflash,format=raw,file=$(BUILD)/OVMF_VARS.fd -drive format=raw,file=$(BUILD)/milestone1.img -serial file:$(BUILD)/serial.log -display none -monitor none -no-reboot) >/dev/null 2>&1 || true; \
