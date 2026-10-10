@@ -10,7 +10,7 @@ Buildroot builds the kernel, toolchain and root filesystem together. Manual: htt
 ## Build and test
 GitHub Actions downloads pinned Buildroot 2026.08, builds the x86-64 kernel and initramfs, packages them into a GRUB ISO, runs host unit tests and boots the ISO in QEMU with a serial-console assertion.
 
-Local prerequisites: GNU make, GCC, curl, Python 3, xorriso, GRUB tools and standard Buildroot dependencies. Run ./scripts/build.sh to build the kernel/root filesystem locally.
+Local prerequisites: GNU make, GCC, curl, Python 3, xorriso, GRUB tools and standard Buildroot dependencies. Run `sh ./scripts/build.sh` to build the kernel/root filesystem locally.
 
 ## First milestone
 - Generic x86-64 Linux kernel.

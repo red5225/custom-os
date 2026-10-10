@@ -16,7 +16,7 @@ jobs:
       - name: Run CustomOS host tests
         run: python3 -m unittest discover -s tests -v
       - name: Build Linux kernel and root filesystem
-        run: ./scripts/build.sh
+        run: sh ./scripts/build.sh
       - name: Package bootable ISO
         run: |
           mkdir -p iso-root/boot/grub
