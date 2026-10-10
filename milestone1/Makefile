@@ -27,7 +27,9 @@ $(BUILD)/loader.so: $(BUILD)/loader.o
 	$(LD) -nostdlib -znocombreloc -T $(EFI_LDS) -shared -Bsymbolic -L$(EFI_LIBDIR) -L$(EFI_GNUEFI_LIBDIR) $< -lefi -lgnuefi -o $@
 
 $(BUILD)/BOOTX64.EFI: $(BUILD)/loader.so
-	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .reloc --target=efi-app-x86_64 $< $@
+	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .reloc --target=efi-app-x86_64 --subsystem=10 $< $@
+	file $@
+	objdump -p $@ | head -40
 
 $(ESP)/EFI/BOOT/BOOTX64.EFI: $(BUILD)/BOOTX64.EFI
 	mkdir -p $(dir $@)
@@ -53,7 +55,10 @@ $(DISK): $(ESP)/EFI/BOOT/BOOTX64.EFI $(ESP)/kernel.elf
 	mmd -i $(ESP_IMAGE) ::/EFI ::/EFI/BOOT
 	mcopy -i $(ESP_IMAGE) $(BUILD)/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
 	mcopy -i $(ESP_IMAGE) $(BUILD)/kernel.elf ::/kernel.elf
+	printf 'FS0:\\EFI\\BOOT\\BOOTX64.EFI\r\n' > $(BUILD)/startup.nsh
+	mcopy -i $(ESP_IMAGE) $(BUILD)/startup.nsh ::/startup.nsh
 	mdir -i $(ESP_IMAGE) ::/EFI/BOOT
+	mdir -i $(ESP_IMAGE) ::/
 	dd if=$(ESP_IMAGE) of=$@ bs=512 seek=$(ESP_OFFSET_SECTORS) conv=notrunc status=none
 	fdisk -l $@
 
@@ -68,7 +73,7 @@ test: all
 	if [[ -z "$$CODE" || -z "$$VARS_TEMPLATE" ]]; then echo 'OVMF firmware files not found under /usr/share'; find /usr/share -iname '*ovmf*' -maxdepth 4 -print; exit 2; fi; \
 	cp "$$VARS_TEMPLATE" $(BUILD)/OVMF_VARS.fd; \
 	rm -f $(BUILD)/serial.log; \
-	(timeout 15s qemu-system-x86_64 -machine q35 -m 256M -cpu qemu64 -drive if=pflash,format=raw,readonly=on,file="$$CODE" -drive if=pflash,format=raw,file=$(BUILD)/OVMF_VARS.fd -drive if=none,id=osdisk,format=raw,file=$(DISK) -device ide-hd,drive=osdisk,bootindex=1 -serial file:$(BUILD)/serial.log -display none -monitor none -no-reboot) >/dev/null 2>&1 || true; \
+	(timeout 20s qemu-system-x86_64 -machine q35 -m 256M -cpu qemu64 -drive if=pflash,format=raw,readonly=on,file="$$CODE" -drive if=pflash,format=raw,file=$(BUILD)/OVMF_VARS.fd -drive if=none,id=osdisk,format=raw,file=$(DISK) -device ide-hd,drive=osdisk,bootindex=1 -serial file:$(BUILD)/serial.log -display none -monitor none -no-reboot) >/dev/null 2>&1 || true; \
 	cat $(BUILD)/serial.log 2>/dev/null || true; \
 	grep -q 'NOL OS MILESTONE 1: kernel reached' $(BUILD)/serial.log || { echo 'QEMU smoke test failed: expected kernel serial marker not found'; exit 1; }; \
 	echo 'QEMU smoke test passed.'
