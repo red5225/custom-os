@@ -1,0 +1,40 @@
+name: Milestone 1 - Native UEFI
+
+on:
+  push:
+    branches: [milestone1-native-uefi]
+    paths:
+      - 'milestone1/**'
+      - '.github/workflows/milestone1-uefi.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-qemu-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Install build and emulator dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential binutils gcc gnu-efi qemu-system-x86 ovmf dosfstools mtools
+      - name: Build UEFI loader, kernel, and FAT image
+        run: make -C milestone1 clean all
+      - name: Run QEMU UEFI smoke test
+        run: make -C milestone1 test
+      - name: Upload boot image and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nol-os-milestone1-native-uefi
+          path: |
+            milestone1/build/milestone1.img
+            milestone1/build/esp/EFI/BOOT/BOOTX64.EFI
+            milestone1/build/esp/kernel.elf
+            milestone1/build/serial.log
+          if-no-files-found: warn
+          retention-days: 14
