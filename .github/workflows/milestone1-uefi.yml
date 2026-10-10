@@ -21,18 +21,26 @@ jobs:
       - name: Install build and emulator dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential binutils gcc gnu-efi qemu-system-x86 ovmf dosfstools mtools
+          sudo apt-get install -y build-essential binutils gcc gnu-efi qemu-system-x86 ovmf dosfstools mtools xorriso
       - name: Build UEFI loader, kernel, and FAT image
         run: make -C milestone1 clean all
       - name: Run QEMU UEFI smoke test
         run: make -C milestone1 test
+      - name: Package bootable UEFI ISO
+        run: |
+          test -f milestone1/build/esp.img
+          xorriso -as mkisofs -R -J -V "NOL_OS" -e esp.img -no-emul-boot -o milestone1/build/milestone1.iso milestone1/build
+          file milestone1/build/milestone1.iso
+          test -s milestone1/build/milestone1.iso
       - name: Upload boot image and diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nol-os-milestone1-native-uefi
           path: |
+            milestone1/build/milestone1.iso
             milestone1/build/milestone1.img
+            milestone1/build/esp.img
             milestone1/build/esp/EFI/BOOT/BOOTX64.EFI
             milestone1/build/esp/kernel.elf
             milestone1/build/serial.log
