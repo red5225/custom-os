@@ -6,6 +6,8 @@
 #define KERNEL_PATH L"\\kernel.elf"
 #define STACK_PAGES 16
 
+static EFI_GUID FileInfoGuid = { 0x09576e92, 0x6d3f, 0x11d2, { 0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b } };
+
 struct boot_info {
     UINT64 magic;
     UINT64 memory_map_size;
@@ -39,13 +41,13 @@ static EFI_STATUS read_file(EFI_HANDLE image, CHAR16 *path, VOID **buffer, UINTN
     if (EFI_ERROR(status)) { uefi_call_wrapper(root->Close, 1, root); return status; }
     status = uefi_call_wrapper(BS->AllocatePool, 3, EfiLoaderData, info_size, (VOID **)&info);
     if (EFI_ERROR(status)) goto done;
-    status = uefi_call_wrapper(file->GetInfo, 4, file, &FileInfo, &info_size, info);
+    status = uefi_call_wrapper(file->GetInfo, 4, file, &FileInfoGuid, &info_size, info);
     if (status == EFI_BUFFER_TOO_SMALL) {
         uefi_call_wrapper(BS->FreePool, 1, info);
         info = NULL;
         status = uefi_call_wrapper(BS->AllocatePool, 3, EfiLoaderData, info_size, (VOID **)&info);
         if (EFI_ERROR(status)) goto done;
-        status = uefi_call_wrapper(file->GetInfo, 4, file, &FileInfo, &info_size, info);
+        status = uefi_call_wrapper(file->GetInfo, 4, file, &FileInfoGuid, &info_size, info);
     }
     if (EFI_ERROR(status)) goto done;
     if (info->FileSize == 0 || info->FileSize > 64 * 1024 * 1024) { status = EFI_LOAD_ERROR; goto done; }
