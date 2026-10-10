@@ -16,6 +16,11 @@ struct boot_info {
     UINT32 descriptor_version;
     UINT32 reserved;
     VOID *memory_map;
+    UINT64 framebuffer_base;
+    UINT32 screen_width;
+    UINT32 screen_height;
+    UINT32 pixels_per_scanline;
+    UINT32 pixel_format;
 };
 
 static VOID fail(EFI_STATUS status, CHAR16 *message) {
@@ -95,12 +100,20 @@ static EFI_STATUS load_elf(VOID *data, UINTN size, EFI_PHYSICAL_ADDRESS *entry_o
 
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
     VOID *kernel_data = NULL, *map = NULL;
+    EFI_GRAPHICS_OUTPUT_PROTOCOL *gop = NULL;
+    EFI_GUID gop_guid = { 0x9042a9de, 0x23dc, 0x4a38, { 0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a } };
     UINTN kernel_size = 0, map_size = 0, map_key = 0, descriptor_size = 0;
     UINT32 descriptor_version = 0;
     EFI_PHYSICAL_ADDRESS entry = 0, stack_base = 0;
     struct boot_info *boot = NULL;
     EFI_STATUS status;
     InitializeLib(image, system_table);
+    if (BS->LocateProtocol != NULL &&
+        !EFI_ERROR(uefi_call_wrapper(BS->LocateProtocol, 3, &gop_guid, NULL, (VOID **)&gop))) {
+        /* Keep the GOP framebuffer active after ExitBootServices. */
+    } else {
+        gop = NULL;
+    }
     Print(L"NOL OS: native UEFI loader\r\n");
     status = read_file(image, KERNEL_PATH, &kernel_data, &kernel_size);
     if (EFI_ERROR(status)) fail(status, L"cannot read \\kernel.elf; ensure the file is beside EFI/BOOT/BOOTX64.EFI");
@@ -112,6 +125,18 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
     status = uefi_call_wrapper(BS->AllocatePool, 3, EfiLoaderData, sizeof(*boot), (VOID **)&boot);
     if (EFI_ERROR(status)) fail(status, L"cannot allocate boot info");
     boot->magic = BOOT_INFO_MAGIC;
+    boot->framebuffer_base = 0;
+    boot->screen_width = 0;
+    boot->screen_height = 0;
+    boot->pixels_per_scanline = 0;
+    boot->pixel_format = 0xffffffffU;
+    if (gop != NULL && gop->Mode != NULL && gop->Mode->Info != NULL && gop->Mode->FrameBufferBase != 0) {
+        boot->framebuffer_base = gop->Mode->FrameBufferBase;
+        boot->screen_width = gop->Mode->Info->HorizontalResolution;
+        boot->screen_height = gop->Mode->Info->VerticalResolution;
+        boot->pixels_per_scanline = gop->Mode->Info->PixelsPerScanLine;
+        boot->pixel_format = (UINT32)gop->Mode->Info->PixelFormat;
+    }
     status = uefi_call_wrapper(BS->GetMemoryMap, 5, &map_size, map, &map_key, &descriptor_size, &descriptor_version);
     if (status != EFI_BUFFER_TOO_SMALL) fail(status, L"cannot size UEFI memory map");
     map_size += 2 * descriptor_size + 4096;
