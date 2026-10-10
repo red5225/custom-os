@@ -21,9 +21,12 @@ $(BUILD)/loader.o: $(ROOT)/loader.c | $(BUILD)
 $(BUILD)/loader.so: $(BUILD)/loader.o
 	$(LD) -nostdlib -znocombreloc -T $(EFI_LDS) -shared -Bsymbolic -L$(EFI_LIBDIR) -L$(EFI_GNUEFI_LIBDIR) $< -lefi -lgnuefi -o $@
 
-$(ESP)/EFI/BOOT/BOOTX64.EFI: $(BUILD)/loader.so
-	mkdir -p $(dir $@)
+$(BUILD)/BOOTX64.EFI: $(BUILD)/loader.so
 	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .reloc --target=efi-app-x86_64 $< $@
+
+$(ESP)/EFI/BOOT/BOOTX64.EFI: $(BUILD)/BOOTX64.EFI
+	mkdir -p $(dir $@)
+	cp $< $@
 
 $(BUILD)/kernel.o: $(ROOT)/kernel.c | $(BUILD)
 	$(CC) -std=c11 -Wall -Wextra -Werror -ffreestanding -fno-stack-protector -fno-pic -fno-pie -fno-asynchronous-unwind-tables -fno-unwind-tables -mno-red-zone -mcmodel=small -O2 -c $< -o $@
@@ -36,12 +39,12 @@ $(ESP)/kernel.elf: $(BUILD)/kernel.elf
 	mkdir -p $(ESP)
 	cp $< $@
 
-$(BUILD)/milestone1.img: $(ESP)/EFI/BOOT/BOOTX64.EFI $(ESP)/kernel.elf
+$(BUILD)/milestone1.img: $(BUILD)/BOOTX64.EFI $(ESP)/EFI/BOOT/BOOTX64.EFI $(ESP)/kernel.elf
 	dd if=/dev/zero of=$@ bs=1M count=16 status=none
 	mkfs.fat -F 16 $@
 	mmd -i $@ ::/EFI ::/EFI/BOOT
-	mcopy -i $@ $(ESP)/EFI/BOOT/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
-	mcopy -i $@ $(ESP)/kernel.elf ::/kernel.elf
+	mcopy -i $@ $(BUILD)/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
+	mcopy -i $@ $(BUILD)/kernel.elf ::/kernel.elf
 
 clean:
 	rm -rf $(BUILD)
