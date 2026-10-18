@@ -1,6 +1,6 @@
 CC=gcc
 HOSTCC=gcc
-CFLAGS=-m64 -march=x86-64 -mabi=sysv -ffreestanding -fno-stack-protector -fno-stack-check -fno-pie -fno-pic -mno-red-zone -mno-mmx -mno-sse -mcmodel=kernel -nostdinc -Ikernel -O2 -Wall -Wextra
+CFLAGS=-m64 -march=x86-64 -mabi=sysv -ffreestanding -fno-stack-protector -fno-stack-check -fno-pie -fno-pic -mno-red-zone -mno-mmx -mno-sse -mcmodel=kernel -nostdinc -isystem $(shell gcc -print-file-name=include) -Ikernel -O2 -Wall -Wextra
 LDFLAGS=-nostdlib -static -Wl,-z,max-page-size=0x1000 -Wl,-z,noexecstack -Wl,--build-id=none -Wl,-T,linker.ld
 OBJ=kernel/kernel.o kernel/terminal.o kernel/keyboard.o kernel/mouse.o kernel/xcl_runtime.o kernel/xcl_generated.o
 XCL_SRCS=$(wildcard src/*.xcl)

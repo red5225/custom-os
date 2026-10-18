@@ -56,6 +56,9 @@ jobs:
           EOF
           grub-mkrescue -o customos-x86_64.iso iso-root
           test -s customos-x86_64.iso
+          iso_bytes=$(stat -c%s customos-x86_64.iso)
+          echo "ISO size: ${iso_bytes} bytes"
+          test "${iso_bytes}" -lt 209715200
           sha256sum customos-x86_64.iso > customos-x86_64.iso.sha256
       - name: QEMU boot smoke test
         run: |
