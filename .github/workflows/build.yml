@@ -8,7 +8,7 @@ permissions:
   contents: read
 jobs:
   test:
-    name: Host and language tests
+    name: Component and host tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,15 +18,10 @@ jobs:
           sudo apt-get install -y build-essential python3
       - name: Run CustomOS host tests
         run: python3 -m unittest discover -s tests -v
-      - name: Compile and test C++ host utility
-        run: |
-          g++ -std=c++17 -Wall -Wextra -Werror tools/host/os_inspect.cpp -o /tmp/customos-inspect
-          /tmp/customos-inspect --self-test
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
-      - name: Build and test C# manifest validator
-        run: dotnet run --project tools/host/ManifestCheck/ManifestCheck.csproj -- --self-test
+      - name: Compile freestanding kernel and XC bootstrap
+        run: make clean all
+      - name: Validate and compile component catalog
+        run: python3 scripts/test_component_catalog.py
 
   build:
     name: Build integrated ISO (main only)

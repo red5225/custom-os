@@ -17,7 +17,7 @@ static bool ValidManifest(string json)
         if (!root.TryGetProperty("version", out var version) || version.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(version.GetString())) return false;
         if (!root.TryGetProperty("entry", out var entry) || entry.ValueKind != JsonValueKind.String) return false;
         var path = entry.GetString() ?? "";
-        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Split('/', '\\').Any(part => part == "..")) return false;
+        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Split(new[] { '/', '\\' }).Any(part => part == "..")) return false;
         if (!root.TryGetProperty("permissions", out var permissions) || permissions.ValueKind != JsonValueKind.Array) return false;
         return permissions.EnumerateArray().All(p => p.ValueKind == JsonValueKind.String);
     }
