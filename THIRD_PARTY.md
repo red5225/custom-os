@@ -1,8 +1,5 @@
-# Third-party source
+# Third-party components
 
-This build incorporates source from HelixaOS by mayank6940.
-Repository: https://github.com/mayank6940/HelixaOS
-License: Apache License 2.0.
+The native UEFI build uses the host toolchain and GNU-EFI headers/libraries at build time. These dependencies are not bundled into CustomOS output.
 
-Imported components include the 32-bit x86 PS/2 keyboard and mouse drivers, IDT/PIC/PIT support, framebuffer rendering, and GUI/UI helpers.
-The original Apache-2.0 license text is preserved in third_party_helixa_apache2.txt.
+CustomOS is not a Linux-kernel fork. The native build must not bundle a Linux kernel, Linux root filesystem, Buildroot, or another Linux distribution. Future third-party code must be documented here with its upstream URL, version, license, and exact files used.

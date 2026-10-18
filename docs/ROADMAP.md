@@ -1,30 +1,31 @@
-# CustomOS implementation roadmap
+# Native CustomOS roadmap
 
-This roadmap tracks work that should become real, tested code. It is not a promise that unimplemented hardware works.
+This roadmap describes planned work, not completed features.
 
-## Phase 1 — native UEFI kernel
+## Boot and kernel
+- [ ] Make UEFI entry, memory-map capture, and kernel handoff deterministic.
+- [ ] Add serial logging and explicit panic/error reporting.
+- [ ] Add physical-memory map and page allocator with tests.
+- [ ] Add IDT, exception handlers, interrupt controller setup, and timer.
+- [ ] Add a stable driver interface and bounded hardware waits.
+- [ ] Add block-device abstraction, partition parsing, and read-only filesystem support.
+- [ ] Add framebuffer discovery and a basic console.
+- [ ] Port keyboard and mouse support into the canonical native kernel.
 
-- [ ] Choose one boot path as the canonical path and keep the Linux/Buildroot image clearly separated as a temporary experiment.
-- [ ] UEFI entry, memory-map capture, page allocator, physical-memory map, and panic path.
-- [ ] Serial logging and deterministic QEMU smoke tests.
-- [ ] Interrupt descriptor table, exception handlers, and timer.
-- [ ] Keyboard and mouse input with bounded waits and explicit initialization errors.
-- [ ] Block-device abstraction and read-only partition/filesystem inspection.
-- [ ] XC language: documented grammar, parser/compiler tests, error messages, and executable examples.
-- [ ] C++ host diagnostics and C# manifest validation remain host tools, not kernel dependencies.
+## XC language
+- [ ] Document the XC grammar and error model.
+- [ ] Expand compiler/parser tests and compile XC examples in CI.
+- [ ] Add a tested standard library of distinct modules.
+- [ ] Decide how XC is loaded/executed by the native kernel before claiming kernel integration.
 
-## Quality gates
+## Quality rules
+- Every source file must implement a distinct function, interface, test, fixture, or documented component.
+- No generated filler, numbered placeholder modules, duplicate versions, or dead demos to inflate file count.
+- Keep the boot chain independent of Linux; host build tools are not part of the OS image.
+- Report actual tracked-file count and artifact size from CI.
 
-- Every new module must be used by a build target or test.
-- Every driver needs initialization, timeout/error handling, and tests where hardware-independent testing is possible.
-- Every public interface needs a header and at least one test or documented consumer.
-- Do not create numbered placeholder files merely to increase the file count.
-- Report the actual tracked-file count and ISO size from CI; never infer either from a target.
+## File-count goal
+The 500+ tracked-file goal remains outstanding. Reach it through real subsystem modules, headers, tests, XC library modules, and hardware-independent fixtures. Do not create empty files merely to reach a number.
 
-## File-count target
-
-The desired 500+ tracked files is a future scale target, not a reason to manufacture empty modules. Reach it through real subsystem source, headers, driver tests, XC standard-library modules, and fixtures as those features are implemented. The current repository is much smaller and does not yet meet that target.
-
-## Build architecture warning
-
-The current integrated ISO workflow still uses a Linux kernel and Buildroot root filesystem. That is not the same as a fully original kernel. The `milestone1/` UEFI experiment is separate until the build, boot protocol, and tests are deliberately unified. Do not describe the Chromebook as supported until hardware testing verifies it.
+## Hardware caveat
+The project is experimental. A QEMU boot test does not establish compatibility with the Acer Chromebook CB314-3H-C4V5 or its firmware/security configuration.
