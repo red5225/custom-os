@@ -2,7 +2,7 @@
 #include <efilib.h>
 #include <elf.h>
 
-#define BOOT_INFO_MAGIC 0x4E4F4C424F4F5431ULL
+#define BOOT_INFO_MAGIC 0x435553544F534231ULL
 #define KERNEL_PATH L"\\kernel.elf"
 #define STACK_PAGES 16
 
@@ -24,7 +24,7 @@ struct boot_info {
 };
 
 static VOID fail(EFI_STATUS status, CHAR16 *message) {
-    Print(L"NOL OS loader error: %s (status 0x%lx)\r\n", message, status);
+    Print(L"CustomOS loader error: %s (status 0x%lx)\r\n", message, status);
     for (;;) __asm__ __volatile__("cli; hlt");
 }
 
@@ -114,7 +114,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
     } else {
         gop = NULL;
     }
-    Print(L"NOL OS: native UEFI loader\r\n");
+    Print(L"CustomOS: native UEFI loader\r\n");
     status = read_file(image, KERNEL_PATH, &kernel_data, &kernel_size);
     if (EFI_ERROR(status)) fail(status, L"cannot read \\kernel.elf; ensure the file is beside EFI/BOOT/BOOTX64.EFI");
     status = load_elf(kernel_data, kernel_size, &entry);

@@ -1,3 +1,3 @@
-# UEFI boot path
+# UEFI boot stage
 
-The current verified source of truth for the experimental native UEFI build remains `milestone1/loader.c`, `milestone1/kernel.c`, and `milestone1/Makefile`. This folder is the intended home for the next deliberate migration. Do not duplicate the loader here; move it only when the root build and QEMU tests are updated in the same change.
+`loader.c` is the native x86-64 UEFI application. It loads `kernel.elf`, collects the UEFI memory map and GOP framebuffer metadata, exits boot services, and transfers control to the freestanding kernel. `Makefile` builds the EFI application and GPT/FAT disk image. No Linux kernel or root filesystem is included.

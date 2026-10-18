@@ -1,3 +1,3 @@
-# Native kernel core
+# Freestanding kernel
 
-The current freestanding kernel source is `milestone1/kernel.c`. `milestone1/kernel.ld` defines its required memory layout and is necessary build code, not junk. Move it into this folder only together with the Makefile, boot protocol, and tests that consume it.
+`kernel.c` is the real freestanding x86-64 kernel entry point. It initializes serial output, validates boot information, and draws a basic status screen when GOP framebuffer data is available. `kernel.ld` defines the physical load layout; it is required linker configuration, not disposable documentation.

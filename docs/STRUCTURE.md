@@ -1,18 +1,12 @@
-# Source tree map
+# Source layout
 
-```text
-boot/uefi/       UEFI entry point, firmware handoff and loader interfaces
-kernel/          freestanding kernel core and architecture-specific code
-drivers/         native hardware drivers; no Linux driver tree
-memory/          physical/virtual memory management
-interrupts/      exceptions, IDT, interrupt controllers and timers
-storage/         block devices, partition readers and filesystems
-console/         serial, text and framebuffer consoles
-language/xc/     XC language grammar, compiler/runtime design and library
-stdlib/xc/       XC standard library, split into focused modules
-apps/example/    user-facing XC programs
-tests/            host-side tests and fixtures
- tools/           host diagnostics and developer tools
-```
+- `boot/uefi/`: UEFI loader and boot-image Makefile.
+- `kernel/`: freestanding kernel and linker script.
+- `language/xc/`: XC language grammar and specification.
+- `stdlib/xc/`: source modules written in XC.
+- `apps/`: example XC programs.
+- `tests/xc/`: executable XC regression programs.
+- `tools/xc/`: host-side XC interpreter.
+- `tools/host/`: C++ inspection and C# manifest validation utilities.
 
-This is the target organization. A folder should appear only when it contains real code or a concrete interface, not empty placeholder files. Existing milestone-one code remains under `milestone1/` until the native boot interfaces are deliberately migrated; do not move source files without updating and testing the build.
+The XC interpreter currently runs on the host; it is not linked into the kernel.

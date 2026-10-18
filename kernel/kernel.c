@@ -16,7 +16,7 @@ struct boot_info {
     uint32_t pixel_format;
 };
 
-#define BOOT_INFO_MAGIC UINT64_C(0x4E4F4C424F4F5431)
+#define BOOT_INFO_MAGIC UINT64_C(0x435553544F534231)
 #define PIXEL_RGB_RESERVED 0u
 #define PIXEL_BGR_RESERVED 1u
 
@@ -101,15 +101,15 @@ static void draw_status(struct boot_info *b) {
     uint32_t top = b->screen_height / 5;
     for (uint32_t x=left; x<b->screen_width-left; ++x)
         for (uint32_t t=0; t<3; ++t) pixel(b,x,top+43+t,30,190,235);
-    text(b,left,top,5,"NOL OS",235,245,255);
+    text(b,left,top,5,"CUSTOMOS",235,245,255);
     text(b,left,top+72,3,"KERNEL RUNNING",80,230,160);
-    text(b,left,top+116,2,"MILESTONE 1 - NATIVE UEFI",175,195,220);
-    text(b,left,top+154,2,"DISPLAY INITIALIZED",175,195,220);
+    text(b,left,top+116,2,"NATIVE UEFI KERNEL",175,195,220);
+    text(b,left,top+154,2,"DISPLAY READY",175,195,220);
 }
 
 __attribute__((noreturn)) void kernel_entry(struct boot_info *info) {
     serial_init();
-    serial_puts("\nNOL OS MILESTONE 1: kernel reached\n");
+    serial_puts("\nCUSTOMOS: kernel reached\n");
     if (info && info->magic == BOOT_INFO_MAGIC) {
         serial_puts("Boot info: valid; UEFI boot services have ended.\n");
         if (info->framebuffer_base) {
