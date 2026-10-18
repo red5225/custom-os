@@ -16,7 +16,7 @@ jobs:
       - name: Install UEFI build and QEMU tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential binutils gcc g++ gnu-efi mtools dosfstools fdisk xorriso qemu-system-x86 ovmf
+          sudo apt-get install -y build-essential binutils gcc g++ gnu-efi mtools dosfstools fdisk xorriso isolinux qemu-system-x86 ovmf
       - name: Compile XC and run positive and negative tests
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror tools/xc/xc.cpp -o /tmp/xc

@@ -68,8 +68,9 @@ $(BUILD)/customos.iso: $(DISK)
 	rm -rf $(BUILD)/iso_root
 	mkdir -p $(BUILD)/iso_root
 	cp $(ESP_IMAGE) $(BUILD)/iso_root/esp.img
-	xorriso -as mkisofs -R -J -V CUSTOMOS -o $@ -eltorito-alt-boot -e esp.img -no-emul-boot $(BUILD)/iso_root
+	xorriso -as mkisofs -R -J -V CUSTOMOS -o $@ -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin -eltorito-alt-boot -e esp.img -no-emul-boot -isohybrid-gpt-basdat $(BUILD)/iso_root
 	file $@
+	fdisk -l $@
 	test "$$(stat -c %s $@)" -lt 209715200
 
 clean:
