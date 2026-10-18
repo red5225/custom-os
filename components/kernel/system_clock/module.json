@@ -1,0 +1,10 @@
+{
+  "name": "system_clock",
+  "display_name": "System Clock",
+  "domain": "kernel",
+  "component_id": 13,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}

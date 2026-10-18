@@ -1,0 +1,10 @@
+{
+  "name": "capability_policy",
+  "display_name": "Capability Policy",
+  "domain": "security",
+  "component_id": 96,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}
