@@ -1,37 +1,32 @@
 # CustomOS — Magneto Edition
 
-CustomOS is a personal operating-system project targeting the Acer Chromebook CB314-3H family (x86-64, Intel Celeron N4500). The repository's `main` branch is the integration line: it contains the current boot/build path and the pieces selected to ship together.
+CustomOS is an operating-system development project targeting the Acer Chromebook CB314-3H family (x86-64, Intel Celeron N4500). `main` is the integration branch.
 
-## Branch model
+## What is real today
 
-- `main` — integrated boot path, component catalog, build workflow, tests, and release candidate. This is the branch used for the combined ISO build.
-- `system/boot` — boot configuration, UEFI/bootloader entry points, image layout, and boot smoke tests.
-- `system/kernel` — low-level kernel code, hardware-facing routines, and kernel tests.
-- `system/terminal` — terminal, keyboard input, shell commands, and text-mode interaction.
-- `system/language-xc` — XC language syntax, interpreter/runtime, examples, and tests.
-- `system/ui` — first-boot and text UI behavior.
-- `system/apps` — app manifests, sample apps, and app launch/validation tools.
-- `system/build-ci` — build scripts, packaging, CI, and emulator smoke tests.
+- `kernel/`, `Makefile`, `linker.ld`, and `limine.conf` build a freestanding x86-64 kernel using C and a Limine boot path. Its shell is generated from the small `.xcl` bootstrap language.
+- `milestone1/` is a separate experimental native UEFI loader/kernel path. It is not yet the default release build.
+- `buildroot-external/` and `scripts/build.sh` build the existing Linux/Buildroot-based image. That image is a separate experiment and **is not a fully from-scratch kernel**.
+- `buildroot-external/board/customos/overlay/usr/bin/xc` is the XC script interpreter. `.xc` scripts use the language documented in `docs/XC-LANGUAGE.md`. The `.xcl` bootstrap files under `src/` are a distinct legacy kernel-build DSL; do not confuse them with `.xc`. A future migration should unify these grammars before renaming them.
+- `tools/host/` contains optional C++ and C# developer utilities. They run on the build host and are not part of the freestanding kernel.
 
-Subsystem branches are testing/work areas. Test changes there, then merge approved work into `main`; keep `main` as the integrated build branch. Each branch is a full Git snapshot, not a physically separate directory. See [`docs/BRANCH-MAP.md`](docs/BRANCH-MAP.md).
+## Language policy
 
-## Component catalog (500+ new files)
-
-The `components/` tree contains 100 independently compiled component packages across boot, kernel, memory, process/task, storage, drivers, terminal, XC language, UI, and security. Each package contains five files: a C public header, C implementation, executable self-test, JSON manifest, and README. CI compiles and runs all 100 tests. These are intentionally labelled **catalog scaffolds**: they give each subsystem a stable interface and test boundary, but they are not yet wired into the boot image and do not claim to implement hardware drivers or a complete kernel. See [`docs/COMPONENT-CATALOG.md`](docs/COMPONENT-CATALOG.md).
-
-## Current implementation status
-
-The current general-purpose ISO build still uses a Linux kernel and Buildroot/BusyBox userspace with CustomOS-authored tools and branding. It is **not** a kernel written entirely from scratch. The separate `milestone1` code is an experimental native UEFI loader/kernel path and is not proof of full Chromebook hardware support. XC currently has an initial interpreter and is not yet a native compiler.
+C is used for freestanding kernel and hardware boundaries. C++ is used for host-side developer utilities where its standard library is useful. C# is used for host-side validation tools; it is not linked into the kernel. XC is the custom scripting language. Avoid parallel NOL/XCL language generations: the unused NOL compiler, runtime, docs, and `.nol` examples have been removed.
 
 ## Build and test
 
-GitHub Actions → **Build CustomOS Linux** builds the x86-64 ISO, runs host-side tests, compiles the component catalog, and performs a QEMU serial-console smoke test. Download the `customos-linux-x86_64` artifact from a completed successful run. A successful QEMU smoke test does not prove that Wi-Fi, audio, touchpad, suspend, internal storage, or Chromebook firmware support works on physical hardware.
+The default GitHub Actions workflow runs Python host tests, compiles/tests the C++ utility, builds/tests the C# utility, and on `main` builds the Linux/Buildroot ISO with a QEMU serial smoke test. The freestanding Limine kernel has a separate Makefile path (`make`, `make iso`) and downloads its boot protocol/header dependencies at build time.
 
-Run checks locally:
+Download the `customos-linux-x86_64` artifact only from a completed successful Actions run. A QEMU smoke test does not prove that Wi-Fi, audio, touchpad, suspend, internal storage, or Chromebook firmware support works on physical hardware. No physical Chromebook compatibility is claimed without a device test.
+
+Run host tests locally:
 
 ```sh
 python3 -m unittest discover -s tests -v
-python3 scripts/test_component_catalog.py
+g++ -std=c++17 -Wall -Wextra -Werror tools/host/os_inspect.cpp -o /tmp/customos-inspect
+/tmp/customos-inspect --self-test
+dotnet run --project tools/host/ManifestCheck/ManifestCheck.csproj -- --self-test
 ```
 
-For build details and compatibility limits, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/CHROMEBOOK-COMPATIBILITY.md`](docs/CHROMEBOOK-COMPATIBILITY.md).
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/CHROMEBOOK-COMPATIBILITY.md`](docs/CHROMEBOOK-COMPATIBILITY.md), and [`docs/BRANCH-MAP.md`](docs/BRANCH-MAP.md).

@@ -11,7 +11,7 @@
 | `system/boot` | Boot entry, boot configuration, disk/ISO layout, boot smoke tests | `milestone1/`, `iso/`, `limine.conf`, boot-related workflow steps |
 | `system/kernel` | Kernel core and hardware-facing routines | `kernel/`, `linker.ld` |
 | `system/terminal` | Terminal, keyboard, shell and command dispatch | `kernel/terminal.*`, `kernel/keyboard.*`, `src/shell.*`, `src/terminal.*`, `src/help.*` |
-| `system/language-xc` | XC language definition, runtime/interpreter, compiler experiments, examples and tests | `XCL.md`, `docs/XC-LANGUAGE.md`, `kernel/xcl_runtime.*`, `tools/xclc.c`, `src/*.xc`, `tests/test_xc.py` |
+| `system/language-xc` | XC language definition, runtime/interpreter, compiler experiments, examples and tests | `XCL.md`, `docs/XC-LANGUAGE.md`, `kernel/xcl_runtime.*`, `tools/xclc.c`, `src/*.xcl`, `tests/test_xc.py` |
 | `system/ui` | First-boot and text UI | `buildroot-external/board/customos/overlay/usr/bin/customos-ui`, `docs/UI-MILESTONE.md`, UI assets |
 | `system/apps` | App manifest format, example apps, validation and launch tools | `apps/`, `buildroot-external/board/customos/overlay/usr/bin/customos-app` |
 | `system/build-ci` | Reproducible build, packaging, CI, QEMU checks and artifacts | `Makefile`, `scripts/`, `.github/workflows/`, `tests/` |

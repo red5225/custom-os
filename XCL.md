@@ -1,9 +1,7 @@
-# XCL
+# XCL bootstrap language (legacy kernel-build DSL)
 
-**XCL — eXecutable Core Language** — is the primary source language of CustomOS.
+This small `.xcl` syntax is used only to generate C shell functions for the freestanding Limine kernel. It is **not** the same grammar as XC (`.xc`) and is not a general-purpose compiler. The current bootstrap compiler is `tools/xclc.c`; it emits `kernel/xcl_generated.c` during `make`.
 
-The OS-facing shell, boot text, help system, status layer, and terminal layer live in `.xcl` files.
+Supported forms are intentionally limited: `fn name()`, `fn command(cmd)`, `print "text";`, `call name;`, command comparisons such as `if cmd == "help" {`, `else if`, `else`, `clear;`, `backspace;`, and `return;`. Unsupported statements must fail the build rather than silently becoming no-ops.
 
-The current bootstrap compiler (`tools/xclc.c`) translates XCL into freestanding C during the build. This is temporary: the roadmap is XCL parsing -> XCL IR -> native machine code, followed by a self-hosted compiler.
-
-XCL is intended to become the main implementation language for CustomOS, with only the lowest-level boot and hardware boundaries remaining in C/assembly.
+**Migration status:** XCL is retained temporarily because the current freestanding kernel build depends on it. XC in `docs/XC-LANGUAGE.md` is the custom script language for user-space examples. The project should converge these into one grammar before deleting or renaming the kernel bootstrap files; the old NOL generation is removed.
