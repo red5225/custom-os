@@ -1,0 +1,18 @@
+program      = { line } ;
+line         = blank | comment | declaration | statement ;
+comment      = "#", { ? any character except newline ? } ;
+declaration  = "program", space, string ;
+statement    = say | let | add | show | ask | conditional | finish ;
+say          = "say", space, string ;
+let          = "let", space, identifier, space, "=", space, value ;
+add          = "add", space, identifier, space, integer ;
+show         = "show", space, identifier ;
+ask          = "ask", space, identifier ;
+conditional  = "if", space, identifier, space, "==", space, value, newline,
+               { line }, [ "else", newline, { line } ], "end" ;
+finish       = "finish" ;
+value        = string | integer ;
+string       = '"', { escaped-character | ? non-quote character ? }, '"' ;
+identifier   = letter, { letter | digit | "_" } ;
+integer      = [ "-" ], digit, { digit } ;
+space        = " ", { " " } ;
