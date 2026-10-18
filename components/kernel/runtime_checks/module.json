@@ -1,0 +1,10 @@
+{
+  "name": "runtime_checks",
+  "display_name": "Runtime Checks",
+  "domain": "kernel",
+  "component_id": 19,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}

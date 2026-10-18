@@ -1,0 +1,10 @@
+{
+  "name": "display_device",
+  "display_name": "Display Device",
+  "domain": "drivers",
+  "component_id": 55,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}

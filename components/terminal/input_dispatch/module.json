@@ -1,0 +1,10 @@
+{
+  "name": "input_dispatch",
+  "display_name": "Input Dispatch",
+  "domain": "terminal",
+  "component_id": 68,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}

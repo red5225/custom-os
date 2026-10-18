@@ -1,0 +1,10 @@
+{
+  "name": "kernel_log",
+  "display_name": "Kernel Log",
+  "domain": "kernel",
+  "component_id": 18,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}

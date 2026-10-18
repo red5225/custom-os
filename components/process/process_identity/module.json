@@ -1,0 +1,10 @@
+{
+  "name": "process_identity",
+  "display_name": "Process Identity",
+  "domain": "process",
+  "component_id": 39,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}
