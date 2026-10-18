@@ -2,6 +2,7 @@
 #include "limine.h"
 #include "terminal.h"
 #include "keyboard.h"
+#include "mouse.h"
 
 __attribute__((used, section(".limine_requests")))
 static volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
@@ -29,7 +30,9 @@ static void input_loop(void) {
     char line[128];
     unsigned int len = 0;
 
+    mouse_event_t mouse_event;
     for (;;) {
+        (void)mouse_poll(&mouse_event);
         int c = keyboard_getchar();
         if (c < 0) continue;
         if (c == 10) {
@@ -66,5 +69,6 @@ void kmain(void) {
     terminal_clear();
     boot();
     keyboard_init();
+    mouse_init();
     input_loop();
 }
