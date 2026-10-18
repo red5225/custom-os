@@ -12,7 +12,7 @@ make test
 make xc-test
 ```
 
-The native boot code lives in `boot/uefi/`; the freestanding kernel entry and linker layout live in `kernel/`. The output is `boot/uefi/build/customos.img`, a raw GPT disk image containing a FAT EFI System Partition, **not an ISO**. Inspect the partition layout before flashing. Passing QEMU does not prove compatibility with the Acer Chromebook CB314-3H.
+The native boot code lives in `boot/uefi/`; the freestanding kernel entry and linker layout live in `kernel/`. The outputs are `boot/uefi/build/customos.iso` (UEFI El Torito ISO) and `boot/uefi/build/customos.img` (raw GPT disk image containing a FAT EFI System Partition). CI checks that the ISO is under 200 MiB and boots both formats in QEMU/OVMF. Passing QEMU does not prove compatibility with the Acer Chromebook CB314-3H.
 
 ## XC language
 

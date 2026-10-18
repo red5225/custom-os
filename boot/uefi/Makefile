@@ -15,7 +15,7 @@ ESP_SECTORS := 126976
 ESP_OFFSET_SECTORS := 2048
 
 .PHONY: all clean test
-all: $(ESP)/EFI/BOOT/BOOTX64.EFI $(ESP)/kernel.elf $(DISK)
+all: $(ESP)/EFI/BOOT/BOOTX64.EFI $(ESP)/kernel.elf $(DISK) $(BUILD)/customos.iso
 
 $(BUILD):
 	mkdir -p $@
@@ -64,6 +64,14 @@ $(DISK): $(ESP)/EFI/BOOT/BOOTX64.EFI $(ESP)/kernel.elf
 	dd if=$(ESP_IMAGE) of=$@ bs=512 seek=$(ESP_OFFSET_SECTORS) conv=notrunc status=none
 	fdisk -l $@
 
+$(BUILD)/customos.iso: $(DISK)
+	rm -rf $(BUILD)/iso_root
+	mkdir -p $(BUILD)/iso_root
+	cp $(ESP_IMAGE) $(BUILD)/iso_root/esp.img
+	xorriso -as mkisofs -R -J -V CUSTOMOS -o $@ -eltorito-alt-boot -e esp.img -no-emul-boot $(BUILD)/iso_root
+	file $@
+	test "$$(stat -c %s $@)" -lt 209715200
+
 clean:
 	rm -rf $(BUILD)
 
@@ -78,4 +86,10 @@ test: all
 	(timeout 20s qemu-system-x86_64 -machine q35 -m 256M -cpu qemu64 -drive if=pflash,format=raw,readonly=on,file="$$CODE" -drive if=pflash,format=raw,file=$(BUILD)/OVMF_VARS.fd -drive if=none,id=osdisk,format=raw,file=$(DISK) -device ide-hd,drive=osdisk,bootindex=1 -serial file:$(BUILD)/serial.log -display none -monitor none -no-reboot) >/dev/null 2>&1 || true; \
 	cat $(BUILD)/serial.log 2>/dev/null || true; \
 	grep -q 'CUSTOMOS: kernel reached' $(BUILD)/serial.log || { echo 'QEMU smoke test failed: expected kernel serial marker not found'; exit 1; }; \
-	echo 'QEMU smoke test passed.'
+	echo 'QEMU raw-disk smoke test passed.'; \
+	cp "$$VARS_TEMPLATE" $(BUILD)/OVMF_VARS_ISO.fd; \
+	rm -f $(BUILD)/iso-serial.log; \
+	(timeout 20s qemu-system-x86_64 -machine q35 -m 256M -cpu qemu64 -drive if=pflash,format=raw,readonly=on,file="$$CODE" -drive if=pflash,format=raw,file=$(BUILD)/OVMF_VARS_ISO.fd -drive if=none,id=customoscd,media=cdrom,format=raw,file=$(BUILD)/customos.iso -device ide-cd,drive=customoscd,bootindex=1 -serial file:$(BUILD)/iso-serial.log -display none -monitor none -no-reboot) >/dev/null 2>&1 || true; \
+	cat $(BUILD)/iso-serial.log 2>/dev/null || true; \
+	grep -q 'CUSTOMOS: kernel reached' $(BUILD)/iso-serial.log || { echo 'QEMU ISO smoke test failed: expected kernel serial marker not found'; exit 1; }; \
+	echo 'QEMU ISO smoke test passed.'
