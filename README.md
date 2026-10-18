@@ -27,3 +27,14 @@ XC is the project's custom command language. Its host interpreter is `tools/xc/x
 The current tracked tree contains 257 files, including 111 `.xc` files (about 43%). The count is produced from the actual Git tree, not fabricated placeholders. The requested 250-file threshold and XC percentage range are met, but this count is not a measure of OS completeness.
 
 This remains an early boot milestone, not a daily-use OS. Wi-Fi, audio, touchpad, power management, internal-storage drivers, filesystem mounting, and Chromebook-specific firmware compatibility are not claimed. The next work is to integrate and test core modules in the kernel, expand XC with parsing/runtime features, and validate the exact boot image in QEMU and then on target hardware.
+
+
+## Booting on the Acer Chromebook CB314-3H (MAGNETO)
+
+The current artifact contains an original x86-64 UEFI application and kernel; it is not a ChromeOS kernel image. It can boot only when the device firmware exposes a standard UEFI USB boot path (for example, compatible Full ROM UEFI firmware). Developer Mode alone does **not** turn the stock ChromeOS boot menu into a general UEFI boot menu.
+
+The ISO now exposes its FAT EFI boot image as a GPT **EFI System Partition** rather than only labeling it as generic Basic Data. CI checks the partition table and runs the image through QEMU/OVMF. Those checks validate the image format and virtual UEFI path, not the Chromebook's current firmware state or hardware.
+
+For a UEFI firmware boot test, use `customos.img` from the build artifact as the first troubleshooting choice: it is a raw GPT disk image with a FAT EFI System Partition and `EFI/BOOT/BOOTX64.EFI`. Write the **image itself** to a USB drive with an image-writing tool; this erases the selected USB drive. The ISO is also provided for optical-media/ISO workflows.
+
+If the Chromebook shows the normal ChromeOS Developer Mode screen with Ctrl+D/Ctrl+U, or simply returns to that screen after choosing USB, stop repeating the same flash. That firmware path does not directly launch this generic UEFI loader. This build does not install or modify firmware, and it has not been confirmed booting on physical MAGNETO hardware.
