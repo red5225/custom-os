@@ -4,7 +4,7 @@ CustomOS is a personal operating-system project targeting the Acer Chromebook CB
 
 ## Branch model
 
-- `main` — integrated boot path, build workflow, tests, and release candidate. Changes should land here only after the relevant subsystem work is integrated.
+- `main` — integrated boot path, component catalog, build workflow, tests, and release candidate. This is the branch used for the combined ISO build.
 - `system/boot` — boot configuration, UEFI/bootloader entry points, image layout, and boot smoke tests.
 - `system/kernel` — low-level kernel code, hardware-facing routines, and kernel tests.
 - `system/terminal` — terminal, keyboard input, shell commands, and text-mode interaction.
@@ -13,7 +13,11 @@ CustomOS is a personal operating-system project targeting the Acer Chromebook CB
 - `system/apps` — app manifests, sample apps, and app launch/validation tools.
 - `system/build-ci` — build scripts, packaging, CI, and emulator smoke tests.
 
-Each subsystem branch is a full Git snapshot, not a separate repository or a folder by itself. Keep changes on a subsystem branch focused on that area, then merge the branch into `main` after its tests pass. See [`docs/BRANCH-MAP.md`](docs/BRANCH-MAP.md).
+Subsystem branches are testing/work areas. Test changes there, then merge approved work into `main`; keep `main` as the integrated build branch. Each branch is a full Git snapshot, not a physically separate directory. See [`docs/BRANCH-MAP.md`](docs/BRANCH-MAP.md).
+
+## Component catalog (500+ new files)
+
+The `components/` tree contains 100 independently compiled component packages across boot, kernel, memory, process/task, storage, drivers, terminal, XC language, UI, and security. Each package contains five files: a C public header, C implementation, executable self-test, JSON manifest, and README. CI compiles and runs all 100 tests. These are intentionally labelled **catalog scaffolds**: they give each subsystem a stable interface and test boundary, but they are not yet wired into the boot image and do not claim to implement hardware drivers or a complete kernel. See [`docs/COMPONENT-CATALOG.md`](docs/COMPONENT-CATALOG.md).
 
 ## Current implementation status
 
@@ -21,12 +25,13 @@ The current general-purpose ISO build still uses a Linux kernel and Buildroot/Bu
 
 ## Build and test
 
-GitHub Actions → **Build CustomOS Linux** builds the x86-64 ISO and runs host-side tests plus a QEMU serial-console smoke test. Download the `customos-linux-x86_64` artifact from a completed run. A successful QEMU smoke test does not prove that Wi-Fi, audio, touchpad, suspend, internal storage, or Chromebook firmware support works on physical hardware.
+GitHub Actions → **Build CustomOS Linux** builds the x86-64 ISO, runs host-side tests, compiles the component catalog, and performs a QEMU serial-console smoke test. Download the `customos-linux-x86_64` artifact from a completed successful run. A successful QEMU smoke test does not prove that Wi-Fi, audio, touchpad, suspend, internal storage, or Chromebook firmware support works on physical hardware.
 
-Run host-side tests locally with:
+Run checks locally:
 
 ```sh
 python3 -m unittest discover -s tests -v
+python3 scripts/test_component_catalog.py
 ```
 
 For build details and compatibility limits, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/CHROMEBOOK-COMPATIBILITY.md`](docs/CHROMEBOOK-COMPATIBILITY.md).
