@@ -1,0 +1,10 @@
+{
+  "name": "volume_registry",
+  "display_name": "Volume Registry",
+  "domain": "storage",
+  "component_id": 42,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}

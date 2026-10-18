@@ -1,0 +1,10 @@
+{
+  "name": "write_queue",
+  "display_name": "Write Queue",
+  "domain": "storage",
+  "component_id": 49,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}

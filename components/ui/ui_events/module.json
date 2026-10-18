@@ -1,0 +1,10 @@
+{
+  "name": "ui_events",
+  "display_name": "Ui Events",
+  "domain": "ui",
+  "component_id": 85,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}
