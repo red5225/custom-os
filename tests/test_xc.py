@@ -1,11 +1,14 @@
+import importlib.machinery
 import importlib.util
 import unittest
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "buildroot-external/board/customos/overlay/usr/bin/xc"
-SPEC = importlib.util.spec_from_file_location("xc", SCRIPT)
+LOADER = importlib.machinery.SourceFileLoader("xc", str(SCRIPT))
+SPEC = importlib.util.spec_from_loader("xc", LOADER)
 xc = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(xc)
+
 
 class XCTests(unittest.TestCase):
     def test_say_and_variables(self):
@@ -34,6 +37,7 @@ class XCTests(unittest.TestCase):
     def test_missing_end_is_rejected(self):
         with self.assertRaises(xc.XCError):
             xc.run('if x == 1\n say "hi"')
+
 
 if __name__ == "__main__":
     unittest.main()
