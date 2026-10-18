@@ -1,39 +1,32 @@
 # CustomOS — Magneto Edition
 
-CustomOS is a personal operating-system project for the Acer Chromebook CB314-3H family (x86-64, Intel Celeron N4500). It has its own identity, boot experience, text-mode interface, command tools, and **XC programming language**.
+CustomOS is a personal operating-system project targeting the Acer Chromebook CB314-3H family (x86-64, Intel Celeron N4500). The repository's `main` branch is the integration line: it contains the current boot/build path and the pieces selected to ship together.
 
-## XC — eXecutable Custom
+## Branch model
 
-XC is a small, readable language designed for CustomOS. Source files use the `.xc` extension. The interpreter is written in Python 3 for this first milestone; it is not yet a native compiler or CPU instruction set.
+- `main` — integrated boot path, build workflow, tests, and release candidate. Changes should land here only after the relevant subsystem work is integrated.
+- `system/boot` — boot configuration, UEFI/bootloader entry points, image layout, and boot smoke tests.
+- `system/kernel` — low-level kernel code, hardware-facing routines, and kernel tests.
+- `system/terminal` — terminal, keyboard input, shell commands, and text-mode interaction.
+- `system/language-xc` — XC language syntax, interpreter/runtime, examples, and tests.
+- `system/ui` — first-boot and text UI behavior.
+- `system/apps` — app manifests, sample apps, and app launch/validation tools.
+- `system/build-ci` — build scripts, packaging, CI, and emulator smoke tests.
 
-Run a program on CustomOS with:
+Each subsystem branch is a full Git snapshot, not a separate repository or a folder by itself. Keep changes on a subsystem branch focused on that area, then merge the branch into `main` after its tests pass. See [`docs/BRANCH-MAP.md`](docs/BRANCH-MAP.md).
+
+## Current implementation status
+
+The current general-purpose ISO build still uses a Linux kernel and Buildroot/BusyBox userspace with CustomOS-authored tools and branding. It is **not** a kernel written entirely from scratch. The separate `milestone1` code is an experimental native UEFI loader/kernel path and is not proof of full Chromebook hardware support. XC currently has an initial interpreter and is not yet a native compiler.
+
+## Build and test
+
+GitHub Actions → **Build CustomOS Linux** builds the x86-64 ISO and runs host-side tests plus a QEMU serial-console smoke test. Download the `customos-linux-x86_64` artifact from a completed run. A successful QEMU smoke test does not prove that Wi-Fi, audio, touchpad, suspend, internal storage, or Chromebook firmware support works on physical hardware.
+
+Run host-side tests locally with:
 
 ```sh
-xc apps/example/hello.xc
+python3 -m unittest discover -s tests -v
 ```
 
-Or use the command dispatcher:
-
-```sh
-customos xc apps/example/hello.xc
-```
-
-Supported statements: `program`, `say`, `let`, `add`, `show`, `ask`, `if`, `else`, `end`, and `finish`. See `docs/XC-LANGUAGE.md` and `apps/example/hello.xc`. XC deliberately does not execute shell commands or arbitrary Python from source files.
-
-## Current build architecture
-
-This development image uses a Linux kernel and BusyBox userspace as a hardware-support foundation, with CustomOS-authored interface, XC language, and system branding on top. This is **not** a kernel written entirely from scratch. Upstream component licenses and attribution are documented in `THIRD_PARTY.md`.
-
-The first UI milestone is a keyboard-driven full-screen interface on virtual terminal 1. This is a text-mode UI, not yet a graphical desktop with a mouse, compositor or hardware-accelerated graphics.
-
-## Build
-
-GitHub Actions builds the x86-64 ISO and uploads it as an artifact. Use **Actions → Build CustomOS Linux → Run workflow**. Download the `customos-linux-x86_64` artifact from the completed run. The workflow runs host-side tests for XC and other CustomOS tools before building.
-
-## Test before installing
-
-Use QEMU first. A successful QEMU boot does not prove Wi-Fi, audio, touchpad, suspend, internal storage or Chromebook firmware compatibility. The intended target is the Acer CB314-3H-C4V5, board family `magneto`, Intel Celeron N4500, x86-64.
-
-## Credits
-
-See `CREDITS.md` and `THIRD_PARTY.md`.
+For build details and compatibility limits, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/CHROMEBOOK-COMPATIBILITY.md`](docs/CHROMEBOOK-COMPATIBILITY.md).
