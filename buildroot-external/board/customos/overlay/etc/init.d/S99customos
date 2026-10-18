@@ -2,13 +2,16 @@
 case "$1" in
  start)
   echo
-  echo "========================================"
-  echo "       CustomOS Linux Edition"
-  echo "========================================"
-  echo "Kernel: Linux | Userspace: BusyBox"
-  echo "Python: $(python3 --version 2>/dev/null || echo unavailable)"
-  echo "Type customos help for system tools."
+  echo '=============================================================='
+  echo '                    CustomOS / Magneto'
+  echo '=============================================================='
+  echo 'Kernel: Linux | Base userspace: BusyBox | Interface: CustomOS'
+  echo 'Type customos help for system commands.'
   echo
+  # Launch the interactive interface on the first virtual terminal if present.
+  if [ -c /dev/tty1 ]; then
+    ( setsid sh /usr/bin/customos-ui </dev/tty1 >/dev/tty1 2>&1 ) &
+  fi
   ;;
  stop) ;;
  restart) "$0" stop; "$0" start ;;

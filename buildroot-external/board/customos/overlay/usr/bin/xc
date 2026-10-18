@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""XC: eXecutable Custom — small, safe, line-oriented CustomOS language."""
+import re
+import sys
+from pathlib import Path
+
+NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+ASSIGN = re.compile(r'^let\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$')
+ADD = re.compile(r"^add\s+([A-Za-z_][A-Za-z0-9_]*)\s+(-?\d+(?:\.\d+)?)$")
+IF = re.compile(r'^if\s+([A-Za-z_][A-Za-z0-9_]*)\s*==\s*(.+)$')
+QUOTED = re.compile(r'^"(.*)"$')
+
+class XCError(Exception):
+    pass
+
+def value(token, variables):
+    token = token.strip()
+    match = QUOTED.fullmatch(token)
+    if match:
+        return match.group(1).replace(r'\"', '"').replace(r'\\', '\\')
+    if re.fullmatch(r"-?\d+", token):
+        return int(token)
+    if re.fullmatch(r"-?\d+\.\d+", token):
+        return float(token)
+    if NAME.fullmatch(token):
+        if token not in variables:
+            raise XCError(f"unknown variable: {token}")
+        return variables[token]
+    raise XCError(f"expected a quoted string, number, or variable; got {token!r}")
+
+def run(source, input_fn=input, output_fn=print):
+    lines = [(n, s.strip()) for n, s in enumerate(source.splitlines(), 1)
+             if s.strip() and not s.strip().startswith("#")]
+    # Validate block balance before executing any program statements.
+    stack = []
+    for number, line in lines:
+        if line.startswith("if "):
+            stack.append(number)
+        elif line in ("else", "end"):
+            if not stack:
+                raise XCError(f"line {number}: unexpected {line}")
+            if line == "end":
+                stack.pop()
+    if stack:
+        raise XCError(f"line {stack[-1]}: missing end")
+
+    variables = {}
+    pc = 0
+    while pc < len(lines):
+        number, line = lines[pc]
+        try:
+            if line.startswith("program "):
+                title = value(line[len("program "):], variables)
+                if not isinstance(title, str):
+                    raise XCError("program title must be a string")
+            elif line.startswith("say "):
+                output_fn(str(value(line[4:], variables)))
+            elif line.startswith("let "):
+                match = ASSIGN.fullmatch(line)
+                if not match:
+                    raise XCError("syntax: let name = value")
+                variables[match.group(1)] = value(match.group(2), variables)
+            elif line.startswith("add "):
+                match = ADD.fullmatch(line)
+                if not match:
+                    raise XCError("syntax: add variable number")
+                name, amount = match.groups()
+                if name not in variables or not isinstance(variables[name], (int, float)):
+                    raise XCError(f"{name} must already contain a number")
+                variables[name] += float(amount) if "." in amount else int(amount)
+            elif line.startswith("show "):
+                name = line[5:].strip()
+                if not NAME.fullmatch(name) or name not in variables:
+                    raise XCError(f"unknown variable: {name}")
+                output_fn(str(variables[name]))
+            elif line.startswith("ask "):
+                name = line[4:].strip()
+                if not NAME.fullmatch(name):
+                    raise XCError("syntax: ask variable")
+                variables[name] = input_fn("")
+            elif line.startswith("if "):
+                match = IF.fullmatch(line)
+                if not match:
+                    raise XCError('syntax: if variable == "value"')
+                name, rhs = match.groups()
+                if name not in variables:
+                    raise XCError(f"unknown variable: {name}")
+                if variables[name] != value(rhs, variables):
+                    depth = 0
+                    jump = None
+                    for j in range(pc + 1, len(lines)):
+                        candidate = lines[j][1]
+                        if candidate.startswith("if "):
+                            depth += 1
+                        elif candidate == "end":
+                            if depth == 0:
+                                jump = j
+                                break
+                            depth -= 1
+                        elif candidate == "else" and depth == 0:
+                            jump = j
+                            break
+                    if jump is None:
+                        raise XCError("if block missing end")
+                    pc = jump
+            elif line == "else":
+                depth = 0
+                jump = None
+                for j in range(pc + 1, len(lines)):
+                    candidate = lines[j][1]
+                    if candidate.startswith("if "):
+                        depth += 1
+                    elif candidate == "end":
+                        if depth == 0:
+                            jump = j
+                            break
+                        depth -= 1
+                if jump is None:
+                    raise XCError("else block missing end")
+                pc = jump
+            elif line == "end":
+                pass
+            elif line == "finish":
+                return variables
+            else:
+                raise XCError(f"unknown command: {line.split()[0]}")
+        except XCError as exc:
+            raise XCError(f"line {number}: {exc}") from exc
+        pc += 1
+    return variables
+
+def main(argv=None):
+    argv = sys.argv[1:] if argv is None else argv
+    if not argv or argv[0] in ("-h", "--help"):
+        print("XC — eXecutable Custom")
+        print("Usage: xc FILE.xc")
+        print("Commands: program, say, let, add, show, ask, if, else, end, finish")
+        return 0 if argv else 2
+    path = Path(argv[0])
+    if path.suffix != ".xc":
+        print("xc: source files must use the .xc extension", file=sys.stderr)
+        return 2
+    try:
+        run(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, XCError) as exc:
+        print(f"xc: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+if __name__ == "__main__":
+    raise SystemExit(main())

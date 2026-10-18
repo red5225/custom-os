@@ -1,21 +1,10 @@
 # CustomOS credits
 
-## Custom code
-The CustomOS kernel, terminal, keyboard layer, XCL language/compiler bootstrap, shell sources, build scripts, and project integration are project code.
+- **Project direction, CustomOS identity, and CustomOS UI:** red5225.
+- **Linux kernel:** Linux kernel contributors; distributed under its applicable GPL-2.0-only license.
+- **BusyBox userspace:** BusyBox contributors; see upstream licensing and notices.
+- **Buildroot build system:** Buildroot contributors; see upstream licensing and notices.
+- **GRUB bootloader and ISO tooling:** GNU Project and respective upstream contributors.
+- **Limine and other components:** where included in the separate native-kernel experiment, see the component's own license and attribution.
 
-## Limine
-CustomOS uses the Limine bootloader and Limine boot protocol.
-Project: Limine-Bootloader/Limine
-License: BSD-2-Clause
-Protocol header: Limine-Bootloader/limine-protocol.
-
-## Font
-The framebuffer terminal uses Daniel Hepper's font8x8_basic bitmap font.
-Project: dhepper/font8x8
-License: Public Domain.
-
-## GNU tools
-GCC, binutils, make, xorriso, mtools, gdisk and QEMU are build/test tools.
-
-## Linux
-CustomOS does not use the Linux kernel. Future driver adaptations will remain separate and credited.
+CustomOS is an independent personal project. It is not affiliated with, endorsed by, or distributed by Acer, Google, or ChromiumOS. All upstream components retain their original copyrights and licenses. See THIRD_PARTY.md for the repository's third-party inventory.

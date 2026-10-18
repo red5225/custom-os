@@ -1,28 +1,39 @@
-# CustomOS
+# CustomOS — Magneto Edition
 
-CustomOS is a Linux-based operating system project with its own identity, terminal tools, application manifest, integrity/recovery prototype, and planned native desktop/UI framework.
+CustomOS is a personal operating-system project for the Acer Chromebook CB314-3H family (x86-64, Intel Celeron N4500). It has its own identity, boot experience, text-mode interface, command tools, and **XC programming language**.
 
-## Architecture
-The previous hand-written kernel and bootloader experiments were unreliable on real hardware. The project now uses **Buildroot + the Linux kernel + BusyBox init/userspace + Python 3**. CustomOS identity lives in its own services, application ecosystem and planned desktop rather than a renamed wallpaper.
+## XC — eXecutable Custom
 
-Buildroot builds the kernel, toolchain and root filesystem together. Manual: https://buildroot.org/downloads/manual/manual.html
+XC is a small, readable language designed for CustomOS. Source files use the `.xc` extension. The interpreter is written in Python 3 for this first milestone; it is not yet a native compiler or CPU instruction set.
 
-## Build and test
-GitHub Actions downloads pinned Buildroot 2026.08, builds the x86-64 kernel and initramfs, packages them into a GRUB ISO, runs host unit tests and boots the ISO in QEMU with a serial-console assertion.
+Run a program on CustomOS with:
 
-Local prerequisites: GNU make, GCC, curl, Python 3, xorriso, GRUB tools and standard Buildroot dependencies. Run `sh ./scripts/build.sh` to build the kernel/root filesystem locally.
+```sh
+xc apps/example/hello.xc
+```
 
-## First milestone
-- Generic x86-64 Linux kernel.
-- BusyBox init and terminal shell.
-- Python 3 and pip in the root filesystem.
-- customos help/about/status/python/integrity/apps commands.
-- SHA-256 integrity-check/recovery prototype.
-- Application manifest validator.
-- QEMU boot smoke test.
+Or use the command dispatcher:
 
-## Not yet delivered
-No graphical desktop, Python IDE, package installer, native UI markup renderer, physical Chromebook validation, or signed/tamper-resistant recovery is claimed complete. Those are subsequent milestones after the image passes boot tests.
+```sh
+customos xc apps/example/hello.xc
+```
 
-## Chromebook safety
-The first image is a generic x86-64 test target, not a guarantee for every Chromebook. The CB314-3H's exact SKU, firmware mode, management status and wireless chipset have not been confirmed here. Do not modify firmware or disable protections on a managed device; firmware changes can make a Chromebook unbootable.
+Supported statements: `program`, `say`, `let`, `add`, `show`, `ask`, `if`, `else`, `end`, and `finish`. See `docs/XC-LANGUAGE.md` and `apps/example/hello.xc`. XC deliberately does not execute shell commands or arbitrary Python from source files.
+
+## Current build architecture
+
+This development image uses a Linux kernel and BusyBox userspace as a hardware-support foundation, with CustomOS-authored interface, XC language, and system branding on top. This is **not** a kernel written entirely from scratch. Upstream component licenses and attribution are documented in `THIRD_PARTY.md`.
+
+The first UI milestone is a keyboard-driven full-screen interface on virtual terminal 1. This is a text-mode UI, not yet a graphical desktop with a mouse, compositor or hardware-accelerated graphics.
+
+## Build
+
+GitHub Actions builds the x86-64 ISO and uploads it as an artifact. Use **Actions → Build CustomOS Linux → Run workflow**. Download the `customos-linux-x86_64` artifact from the completed run. The workflow runs host-side tests for XC and other CustomOS tools before building.
+
+## Test before installing
+
+Use QEMU first. A successful QEMU boot does not prove Wi-Fi, audio, touchpad, suspend, internal storage or Chromebook firmware compatibility. The intended target is the Acer CB314-3H-C4V5, board family `magneto`, Intel Celeron N4500, x86-64.
+
+## Credits
+
+See `CREDITS.md` and `THIRD_PARTY.md`.
