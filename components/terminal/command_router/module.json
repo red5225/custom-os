@@ -1,0 +1,10 @@
+{
+  "name": "command_router",
+  "display_name": "Command Router",
+  "domain": "terminal",
+  "component_id": 64,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}

@@ -1,0 +1,10 @@
+{
+  "name": "audit_events",
+  "display_name": "Audit Events",
+  "domain": "security",
+  "component_id": 95,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}

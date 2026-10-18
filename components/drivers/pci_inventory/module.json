@@ -1,0 +1,10 @@
+{
+  "name": "pci_inventory",
+  "display_name": "Pci Inventory",
+  "domain": "drivers",
+  "component_id": 51,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}

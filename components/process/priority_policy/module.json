@@ -1,0 +1,10 @@
+{
+  "name": "priority_policy",
+  "display_name": "Priority Policy",
+  "domain": "process",
+  "component_id": 34,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}

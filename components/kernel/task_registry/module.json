@@ -1,0 +1,10 @@
+{
+  "name": "task_registry",
+  "display_name": "Task Registry",
+  "domain": "kernel",
+  "component_id": 17,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}
