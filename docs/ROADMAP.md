@@ -13,10 +13,12 @@ This roadmap describes planned work, not completed features.
 - [ ] Port keyboard and mouse support into the canonical native kernel.
 
 ## XC language
-- [ ] Document the XC grammar and error model.
-- [ ] Expand compiler/parser tests and compile XC examples in CI.
-- [ ] Add a tested standard library of distinct modules.
-- [ ] Decide how XC is loaded/executed by the native kernel before claiming kernel integration.
+- [x] Implement a host-side interpreter for the initial `.xc` grammar.
+- [x] Add CI smoke tests for arithmetic, conditions, and input.
+- [ ] Document the XC grammar and error model in one concise reference.
+- [ ] Add error cases, nested-condition tests, and more examples.
+- [ ] Add a tested XC standard library of distinct modules.
+- [ ] Design and implement XC runtime integration in the native kernel before claiming in-kernel execution.
 
 ## Quality rules
 - Every source file must implement a distinct function, interface, test, fixture, or documented component.

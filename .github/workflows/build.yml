@@ -16,7 +16,23 @@ jobs:
       - name: Install UEFI build and QEMU tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential binutils gcc gnu-efi mtools dosfstools qemu-system-x86 ovmf
+          sudo apt-get install -y build-essential binutils gcc g++ gnu-efi mtools dosfstools qemu-system-x86 ovmf
+      - name: Compile and test XC language interpreter
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror tools/xc/xc.cpp -o /tmp/xc
+          test "$(/tmp/xc tests/xc/hello.xc)" = "$(printf 'XC interpreter online\\n42')"
+          test "$(/tmp/xc tests/xc/condition.xc)" = "condition true"
+          test "$(printf 'Nolan\\n' | /tmp/xc tests/xc/ask.xc)" = "welcome back"
+          test "$(printf 'Other\\n' | /tmp/xc tests/xc/ask.xc)" = "hello"
+      - name: Compile and self-test C++ host utility
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror tools/host/os_inspect.cpp -o /tmp/customos-inspect
+          /tmp/customos-inspect --self-test
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Build and self-test C# manifest validator
+        run: dotnet run --project tools/host/ManifestCheck/ManifestCheck.csproj -- --self-test
       - name: Build native UEFI loader and kernel
         run: make clean all
       - name: Run native boot smoke test
