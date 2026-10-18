@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-ASSIGN = re.compile(r"^let\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$")
+ASSIGN = re.compile(r'^let\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$')
 ADD = re.compile(r"^add\s+([A-Za-z_][A-Za-z0-9_]*)\s+(-?\d+(?:\.\d+)?)$")
 IF = re.compile(r'^if\s+([A-Za-z_][A-Za-z0-9_]*)\s*==\s*(.+)$')
 QUOTED = re.compile(r'^"(.*)"$')
@@ -29,25 +29,22 @@ def value(token, variables):
     raise XCError(f"expected a quoted string, number, or variable; got {token!r}")
 
 def run(source, input_fn=input, output_fn=print):
-    lines = []
-    for number, raw in enumerate(source.splitlines(), 1):
-        stripped = raw.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-        lines.append((number, stripped))
-    variables = {}
-    # Parse block structure first, so malformed nesting fails before execution.
-    blocks = []
-    for idx, (number, line) in enumerate(lines):
+    lines = [(n, s.strip()) for n, s in enumerate(source.splitlines(), 1)
+             if s.strip() and not s.strip().startswith("#")]
+    # Validate block balance before executing any program statements.
+    stack = []
+    for number, line in lines:
         if line.startswith("if "):
-            blocks.append(idx)
+            stack.append(number)
         elif line in ("else", "end"):
-            if not blocks:
+            if not stack:
                 raise XCError(f"line {number}: unexpected {line}")
             if line == "end":
-                blocks.pop()
-    if blocks:
-        raise XCError(f"line {lines[blocks[-1]][0]}: missing end")
+                stack.pop()
+    if stack:
+        raise XCError(f"line {stack[-1]}: missing end")
+
+    variables = {}
     pc = 0
     while pc < len(lines):
         number, line = lines[pc]
@@ -88,8 +85,7 @@ def run(source, input_fn=input, output_fn=print):
                 name, rhs = match.groups()
                 if name not in variables:
                     raise XCError(f"unknown variable: {name}")
-                expected = value(rhs, variables)
-                if variables[name] != expected:
+                if variables[name] != value(rhs, variables):
                     depth = 0
                     jump = None
                     for j in range(pc + 1, len(lines)):
@@ -138,7 +134,7 @@ def main(argv=None):
     if not argv or argv[0] in ("-h", "--help"):
         print("XC — eXecutable Custom")
         print("Usage: xc FILE.xc")
-        print('Commands: program, say, let, add, show, ask, if, else, end, finish')
+        print("Commands: program, say, let, add, show, ask, if, else, end, finish")
         return 0 if argv else 2
     path = Path(argv[0])
     if path.suffix != ".xc":
