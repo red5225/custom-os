@@ -1,0 +1,10 @@
+{
+  "name": "cpu_features",
+  "display_name": "Cpu Features",
+  "domain": "kernel",
+  "component_id": 14,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}

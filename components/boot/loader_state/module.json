@@ -1,0 +1,10 @@
+{
+  "name": "loader_state",
+  "display_name": "Loader State",
+  "domain": "boot",
+  "component_id": 6,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}
