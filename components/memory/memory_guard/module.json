@@ -1,0 +1,10 @@
+{
+  "name": "memory_guard",
+  "display_name": "Memory Guard",
+  "domain": "memory",
+  "component_id": 29,
+  "api_version": 1,
+  "maturity": "catalog-scaffold",
+  "build_test": "scripts/test_component_catalog.py",
+  "integrated_into_boot_image": false
+}
