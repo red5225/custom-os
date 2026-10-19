@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include "xcui.h"
 
 struct boot_info {
     uint64_t magic;
@@ -93,20 +94,55 @@ static void text(struct boot_info *b, uint32_t x, uint32_t y, unsigned scale,
     }
 }
 
-static void draw_status(struct boot_info *b) {
-    if (!b || !b->framebuffer_base || b->screen_width < 320 || b->screen_height < 160 ||
-        (b->pixel_format != PIXEL_RGB_RESERVED && b->pixel_format != PIXEL_BGR_RESERVED)) return;
-    fill(b, 8, 14, 28);
-    uint32_t left = b->screen_width / 12;
-    uint32_t top = b->screen_height / 5;
-    for (uint32_t x=left; x<b->screen_width-left; ++x)
-        for (uint32_t t=0; t<3; ++t) pixel(b,x,top+43+t,30,190,235);
-    text(b,left,top,5,"CUSTOMOS",235,245,255);
-    text(b,left,top+72,3,"KERNEL RUNNING",80,230,160);
-    text(b,left,top+116,2,"NATIVE UEFI KERNEL",175,195,220);
-    text(b,left,top+154,2,"DISPLAY READY",175,195,220);
+extern struct xcui_tree xcui_embedded_tree;
+
+static void xcui_fill_rect(void *context, int16_t x, int16_t y,
+                           int16_t width, int16_t height, uint32_t color) {
+    struct boot_info *b = (struct boot_info *)context;
+    int32_t x0=x, y0=y, x1=(int32_t)x+width, y1=(int32_t)y+height;
+    uint8_t r=(uint8_t)(color>>16), g=(uint8_t)(color>>8), bl=(uint8_t)color;
+    if (!b || width<=0 || height<=0) return;
+    if (x0<0) x0=0;
+    if (y0<0) y0=0;
+    if (x1>(int32_t)b->screen_width) x1=(int32_t)b->screen_width;
+    if (y1>(int32_t)b->screen_height) y1=(int32_t)b->screen_height;
+    for (int32_t yy=y0; yy<y1; ++yy)
+        for (int32_t xx=x0; xx<x1; ++xx)
+            pixel(b,(uint32_t)xx,(uint32_t)yy,r,g,bl);
 }
 
+static void xcui_draw_text(void *context, int16_t x, int16_t y,
+                           const char *value, uint16_t size, uint32_t color) {
+    char uppercase[XCUI_TEXT_CAP];
+    size_t i=0;
+    unsigned scale = size >= 21 ? 3u : (size >= 14 ? 2u : 1u);
+    while (value && value[i] && i+1<sizeof(uppercase)) {
+        char c=value[i];
+        if (c>='a' && c<='z') c=(char)(c-'a'+'A');
+        uppercase[i++]=c;
+    }
+    uppercase[i]='\0';
+    text((struct boot_info *)context,(uint32_t)(x<0?0:x),(uint32_t)(y<0?0:y),
+         scale,uppercase,(uint8_t)(color>>16),(uint8_t)(color>>8),(uint8_t)color);
+}
+
+static void draw_status(struct boot_info *b) {
+    struct xcui_backend backend;
+    if (!b || !b->framebuffer_base || b->screen_width < 320 || b->screen_height < 160 ||
+        b->screen_width > 32767 || b->screen_height > 32767 ||
+        (b->pixel_format != PIXEL_RGB_RESERVED && b->pixel_format != PIXEL_BGR_RESERVED)) return;
+    backend.fill_rect=xcui_fill_rect;
+    backend.draw_text=xcui_draw_text;
+    if (xcui_layout(&xcui_embedded_tree,(int16_t)b->screen_width,(int16_t)b->screen_height) &&
+        xcui_render(&xcui_embedded_tree,&backend,b)) {
+        serial_puts("XCUI: embedded CustomOS desktop rendered.\n");
+        return;
+    }
+    serial_puts("XCUI: render failed; drawing fallback status screen.\n");
+    fill(b,8,14,28);
+    text(b,b->screen_width/12,b->screen_height/5,4,"CUSTOMOS",235,245,255);
+    text(b,b->screen_width/12,b->screen_height/5+60,2,"XCUI ERROR",255,110,100);
+}
 __attribute__((noreturn)) void kernel_entry(struct boot_info *info) {
     serial_init();
     serial_puts("\nCUSTOMOS: kernel reached\n");

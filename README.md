@@ -38,3 +38,8 @@ The ISO now exposes its FAT EFI boot image as a GPT **EFI System Partition** rat
 For a UEFI firmware boot test, use `customos.img` from the build artifact as the first troubleshooting choice: it is a raw GPT disk image with a FAT EFI System Partition and `EFI/BOOT/BOOTX64.EFI`. Write the **image itself** to a USB drive with an image-writing tool; this erases the selected USB drive. The ISO is also provided for optical-media/ISO workflows.
 
 If the Chromebook shows the normal ChromeOS Developer Mode screen with Ctrl+D/Ctrl+U, or simply returns to that screen after choosing USB, stop repeating the same flash. That firmware path does not directly launch this generic UEFI loader. This build does not install or modify firmware, and it has not been confirmed booting on physical MAGNETO hardware.
+
+
+## XCUI native UI language
+
+`ui/xcui/` contains the vendored XCUI parser, C-data generator, fixed-size runtime, tests, and the default `examples/desktop.xcui`. The build validates the source on the host, generates a static C tree, and links the freestanding XCUI runtime plus desktop tree into `kernel.elf`. At boot, the kernel renders that tree through framebuffer callbacks. This is a first native renderer integration: the XC interpreter is still a separate host program, and mouse/keyboard event-loop wiring plus dispatching button actions into XC functions remain future work.

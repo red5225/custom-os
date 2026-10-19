@@ -1,5 +1,5 @@
 SHELL := /bin/sh
-.PHONY: all clean test inspect xc-test
+.PHONY: all clean test inspect xc-test xcui-test
 
 all:
 	$(MAKE) -C boot/uefi all
@@ -9,6 +9,9 @@ test:
 
 clean:
 	$(MAKE) -C boot/uefi clean
+
+xcui-test:
+	$(MAKE) -C boot/uefi xcui-test
 
 xc-test:
 	g++ -std=c++17 -Wall -Wextra -Werror tools/xc/xc.cpp -o /tmp/customos-xc

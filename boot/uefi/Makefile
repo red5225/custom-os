@@ -1,6 +1,10 @@
 SHELL := /bin/bash
 ROOT := $(CURDIR)
 BUILD := $(ROOT)/build
+XCUI_DIR := $(ROOT)/../../ui/xcui
+XCUI_CPPFLAGS := -I$(XCUI_DIR)/include
+XCUI_HOST_CFLAGS := -std=c11 -O2 -Wall -Wextra -Werror -Wno-misleading-indentation -pedantic
+XCUI_KERNEL_CFLAGS := -std=c11 -Wall -Wextra -Werror -ffreestanding -fno-stack-protector -fno-pic -fno-pie -fno-asynchronous-unwind-tables -fno-unwind-tables -mno-red-zone -mcmodel=small -O2
 ESP := $(BUILD)/esp
 OBJCOPY := objcopy
 EFI_INC := /usr/include/efi
@@ -14,7 +18,7 @@ ESP_IMAGE := $(BUILD)/esp.img
 ESP_SECTORS := 126976
 ESP_OFFSET_SECTORS := 2048
 
-.PHONY: all clean test
+.PHONY: all clean test xcui-test
 all: $(ESP)/EFI/BOOT/BOOTX64.EFI $(ESP)/kernel.elf $(DISK) $(BUILD)/customos.iso
 
 $(BUILD):
@@ -37,11 +41,23 @@ $(ESP)/EFI/BOOT/BOOTX64.EFI: $(BUILD)/BOOTX64.EFI
 	mkdir -p $(dir $@)
 	cp $< $@
 
-$(BUILD)/kernel.o: $(abspath $(ROOT)/../../kernel/kernel.c) | $(BUILD)
-	$(CC) -std=c11 -Wall -Wextra -Werror -ffreestanding -fno-stack-protector -fno-pic -fno-pie -fno-asynchronous-unwind-tables -fno-unwind-tables -mno-red-zone -mcmodel=small -O2 -c $< -o $@
+$(BUILD)/xcui: $(XCUI_DIR)/src/xcui_parse.c $(XCUI_DIR)/src/xcui_runtime.c $(XCUI_DIR)/tools/xcui.c $(XCUI_DIR)/include/xcui.h | $(BUILD)
+	$(CC) $(XCUI_HOST_CFLAGS) $(XCUI_CPPFLAGS) $(XCUI_DIR)/src/xcui_parse.c $(XCUI_DIR)/src/xcui_runtime.c $(XCUI_DIR)/tools/xcui.c -o $@
 
-$(BUILD)/kernel.elf: $(BUILD)/kernel.o $(abspath $(ROOT)/../../kernel/kernel.ld)
-	$(LD) -nostdlib -static -z max-page-size=0x1000 -T $(abspath $(ROOT)/../../kernel/kernel.ld) -o $@ $(BUILD)/kernel.o
+$(BUILD)/desktop_embedded.c: $(XCUI_DIR)/examples/desktop.xcui $(BUILD)/xcui
+	$(BUILD)/xcui build $< -o $@
+
+$(BUILD)/xcui_runtime.o: $(XCUI_DIR)/src/xcui_runtime.c $(XCUI_DIR)/include/xcui.h | $(BUILD)
+	$(CC) $(XCUI_KERNEL_CFLAGS) $(XCUI_CPPFLAGS) -c $< -o $@
+
+$(BUILD)/desktop_embedded.o: $(BUILD)/desktop_embedded.c $(XCUI_DIR)/include/xcui.h
+	$(CC) $(XCUI_KERNEL_CFLAGS) $(XCUI_CPPFLAGS) -c $< -o $@
+
+$(BUILD)/kernel.o: $(abspath $(ROOT)/../../kernel/kernel.c) $(XCUI_DIR)/include/xcui.h | $(BUILD)
+	$(CC) $(XCUI_KERNEL_CFLAGS) $(XCUI_CPPFLAGS) -c $< -o $@
+
+$(BUILD)/kernel.elf: $(BUILD)/kernel.o $(BUILD)/xcui_runtime.o $(BUILD)/desktop_embedded.o $(abspath $(ROOT)/../../kernel/kernel.ld)
+	$(LD) -nostdlib -static -z max-page-size=0x1000 -T $(abspath $(ROOT)/../../kernel/kernel.ld) -o $@ $(BUILD)/kernel.o $(BUILD)/xcui_runtime.o $(BUILD)/desktop_embedded.o
 	readelf -h -l $@
 
 $(ESP)/kernel.elf: $(BUILD)/kernel.elf
@@ -79,7 +95,14 @@ $(BUILD)/customos.iso: $(DISK)
 clean:
 	rm -rf $(BUILD)
 
-test: all
+$(BUILD)/test_xcui: $(XCUI_DIR)/src/xcui_parse.c $(XCUI_DIR)/src/xcui_runtime.c $(XCUI_DIR)/tests/test_xcui.c $(XCUI_DIR)/include/xcui.h | $(BUILD)
+	$(CC) $(XCUI_HOST_CFLAGS) $(XCUI_CPPFLAGS) $(XCUI_DIR)/src/xcui_parse.c $(XCUI_DIR)/src/xcui_runtime.c $(XCUI_DIR)/tests/test_xcui.c -o $@
+
+xcui-test: $(BUILD)/test_xcui $(BUILD)/xcui
+	$(BUILD)/test_xcui
+	$(BUILD)/xcui check $(XCUI_DIR)/examples/desktop.xcui
+
+test: all xcui-test
 	@set -eu; \
 	CODE=$$(find /usr/share -name 'OVMF_CODE_4M.fd' -print -quit); \
 	VARS_TEMPLATE=$$(find /usr/share -name 'OVMF_VARS_4M.fd' -print -quit); \

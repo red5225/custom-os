@@ -1,0 +1,20 @@
+# XCUI describes UI structure; XC logic will bind to action names.
+app "CustomOS Shell" {
+    window "Desktop" background "#151b26" {
+        row gap 12 padding 16 {
+            panel "Sidebar" width 220 background "#202b3d" {
+                text "CustomOS" size 24 color "#ffffff"
+                button "Files" action "open_files" height 40
+                button "Settings" action "open_settings" height 40
+            }
+            column gap 8 padding 12 {
+                text "Welcome to CustomOS" size 28 color "#ffffff"
+                text "Native UI described by XCUI." color "#b8c4d8"
+                row gap 8 {
+                    button "Terminal" action "open_terminal" height 44
+                    button "Network" action "open_network" height 44
+                }
+            }
+        }
+    }
+}
