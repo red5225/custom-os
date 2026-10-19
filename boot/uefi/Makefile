@@ -87,7 +87,7 @@ $(BUILD)/customos.iso: $(DISK)
 	cp -a $(ESP)/. $(BUILD)/iso_root/
 	cp $(ESP_IMAGE) $(BUILD)/iso_root/esp.img
 	test -f $(BUILD)/iso_root/EFI/BOOT/BOOTX64.EFI
-	xorriso -as mkisofs -R -J -V CUSTOMOS -o $@ -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin -eltorito-alt-boot -e esp.img -no-emul-boot -isohybrid-gpt-basdat $(BUILD)/iso_root
+	xorriso -as mkisofs -R -J -V CUSTOMOS -o $@ -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin -eltorito-platform efi -eltorito-boot esp.img -no-emul-boot -isohybrid-gpt-basdat $(BUILD)/iso_root
 	file $@
 	fdisk -l $@
 	test "$$(stat -c %s $@)" -lt 209715200
