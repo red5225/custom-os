@@ -1,20 +1,24 @@
-# XCUI describes UI structure; XC logic will bind to action names.
+# XCUI desktop layout source. Reorder these button declarations to rearrange apps.
+# Each action name is dispatched by kernel/kernel.c.
 app "CustomOS Shell" {
-    window "Desktop" background "#151b26" {
-        row gap 12 padding 16 {
-            panel "Sidebar" width 220 background "#202b3d" {
-                text "CustomOS" size 24 color "#ffffff"
-                button "Files" action "open_files" height 40
-                button "Settings" action "open_settings" height 40
-            }
-            column gap 8 padding 12 {
-                text "Welcome to CustomOS" size 28 color "#ffffff"
-                text "Native UI described by XCUI." color "#b8c4d8"
-                row gap 8 {
-                    button "Terminal" action "open_terminal" height 44
-                    button "Network" action "open_network" height 44
+    window "Desktop" background "#0c1220" {
+        column gap 14 padding 28 {
+            text "CUSTOMOS" size 24 color "#ffffff"
+            text "A small, native operating system" size 14 color "#9eafc9"
+            panel "Applications" width 560 background "#172338" {
+                column gap 12 padding 20 {
+                    text "APPS" size 12 color "#75baff"
+                    row gap 12 {
+                        button "Files" action "open_files" height 64
+                        button "Terminal" action "open_terminal" height 64
+                    }
+                    row gap 12 {
+                        button "Settings" action "open_settings" height 64
+                        button "Network" action "open_network" height 64
+                    }
                 }
             }
+            text "Select an app with Tab / arrows, then press Enter" color "#b8c4d8"
         }
     }
 }
