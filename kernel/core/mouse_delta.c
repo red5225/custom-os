@@ -1,5 +1,9 @@
 #include "mouse_delta.h"
-#include <stddef.h>
-#include <stdint.h>
 
-int16_t mouse_decode_delta(uint8_t raw) { return raw < 128u ? (int16_t)raw : (int16_t)raw - 256; }
+int16_t mouse_decode_delta(uint8_t raw) {
+    /* Explicit sign extension avoids relying on implementation-defined casts. */
+    if ((raw & 0x80u) != 0u) {
+        return (int16_t)((int16_t)raw - 256);
+    }
+    return (int16_t)raw;
+}
