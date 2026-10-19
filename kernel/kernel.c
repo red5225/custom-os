@@ -190,6 +190,7 @@ static void focus_border(struct boot_info *b, const struct xcui_node *n) {
 static uint16_t find_button(uint16_t start, int direction) {
     uint16_t i, count=xcui_embedded_tree.node_count;
     if (count == 0) return XCUI_NO_NODE;
+    if (start >= count) start = direction > 0 ? (uint16_t)(count - 1u) : 0u;
     for (i=0; i<count; ++i) {
         if (direction > 0) start = (uint16_t)((start + 1u) % count);
         else start = (uint16_t)((start == 0u) ? count - 1u : start - 1u);
