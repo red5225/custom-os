@@ -27,6 +27,17 @@ jobs:
           for f in tests/xc/regression_*.xc apps/examples/*.xc; do /tmp/xc "$f" >/dev/null; done
           if /tmp/xc tests/xc/invalid.xc >/dev/null 2>&1; then echo 'invalid XC program was accepted'; exit 1; fi
           if /tmp/xc tests/xc/bad_value.xc >/dev/null 2>&1; then echo 'invalid XC value was accepted'; exit 1; fi
+      - name: Compile XC to C and run generated programs
+        run: |
+          set -eu
+          g++ -std=c++17 -Wall -Wextra -Werror tools/xc/xc_codegen.cpp -o /tmp/xc-codegen
+          /tmp/xc-codegen build tests/xc_codegen/basic.xc /tmp/xc-basic.c
+          cc -std=c11 -Wall -Wextra -Werror /tmp/xc-basic.c -o /tmp/xc-basic
+          test "$(/tmp/xc-basic)" = "$(printf 'compiled XC:\n42\ncondition true')"
+          /tmp/xc-codegen build tests/xc_codegen/string_condition.xc /tmp/xc-string.c
+          cc -std=c11 -Wall -Wextra -Werror /tmp/xc-string.c -o /tmp/xc-string
+          test "$(/tmp/xc-string)" = "string comparison passed"
+          echo 'XC-to-C smoke tests passed.'
       - name: Compile XCUI runtime and validate embedded desktop
         run: make xcui-test
       - name: Compile and test all kernel core primitives
