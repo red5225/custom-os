@@ -1,23 +1,32 @@
-# CustomOS light theme. Edit colors here; see ui/xcui/THEMES.md.
+# CustomOS desktop: macOS-inspired, implemented natively in XCUI.
+# Original CustomOS layout and labels; no Apple assets or source code.
 app "CustomOS Shell" {
-    window "Desktop" background "#f6f7fb" {
-        column gap 12 padding 28 {
-            text "CUSTOMOS" size 24 color "#202938" height 42
-            text "A small, native operating system" size 14 color "#687386" height 30
-            panel "Applications" width 560 background "#ffffff" height 244 {
-                column gap 10 padding 18 {
-                    text "APPS" size 12 color "#285bb4" height 24
-                    row gap 12 height 76 {
-                        button "Files" action "open_files" height 64
-                        button "Terminal" action "open_terminal" height 64
-                    }
-                    row gap 12 height 76 {
-                        button "Settings" action "open_settings" height 64
-                        button "Network" action "open_network" height 64
+    window "Desktop" background "#e8edf5" {
+        column gap 0 padding 0 {
+            row gap 14 height 36 {
+                text "CUSTOMOS" size 14 color "#202938" width 116 height 36
+                text "Desktop" size 12 color "#202938" width 76 height 36
+                text "Apps" size 12 color "#202938" width 56 height 36
+                text "System" size 12 color "#202938" width 76 height 36
+            }
+            column gap 10 padding 24 {
+                text "Welcome to CustomOS" size 24 color "#202938" height 42
+                text "A native desktop built with XCUI" size 14 color "#687386" height 28
+                panel "Applications" width 620 background "#ffffff" height 236 {
+                    column gap 10 padding 18 {
+                        text "YOUR APPS" size 12 color "#285bb4" height 24
+                        row gap 12 height 72 {
+                            button "Files" action "open_files" height 60
+                            button "Terminal" action "open_terminal" height 60
+                        }
+                        row gap 12 height 72 {
+                            button "Settings" action "open_settings" height 60
+                            button "Network" action "open_network" height 60
+                        }
                     }
                 }
+                text "Select an app with the pointer or Tab / arrow keys" size 12 color "#687386" height 28
             }
-            text "Select an app with Tab / arrows, then press Enter" size 12 color "#687386" height 30
         }
     }
 }
