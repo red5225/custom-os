@@ -5,7 +5,7 @@ on:
   pull_request:
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   native-uefi:
     name: Build original UEFI loader, kernel and XC programs
@@ -68,3 +68,17 @@ jobs:
             boot/uefi/build/serial.log
             boot/uefi/build/iso-serial.log
           if-no-files-found: error
+      - name: Publish bootable images to GitHub Releases
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: CustomOS build ${{ github.run_number }}
+          prerelease: true
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            boot/uefi/build/customos.iso
+            boot/uefi/build/customos.img
+            boot/uefi/build/BOOTX64.EFI
+            boot/uefi/build/kernel.elf
