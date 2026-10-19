@@ -1,43 +1,36 @@
 # XC / XCUI language-first CustomOS architecture
 
-## Intended boundary
+## Non-negotiable language boundary
 
-CustomOS should be implemented in XC and XCUI wherever practical. C is reserved for the small kernel core and hardware-facing primitives that require direct machine-level control. C should not be the default implementation language for drivers, filesystems, networking services, the desktop, or applications.
+- **C** is reserved for the small kernel core and genuinely lowest-level hardware primitives.
+- **XC** implements the language runtime/compiler, device drivers, filesystems, memory services, networking, USB/audio/graphics/input services, utilities, and applications wherever practical.
+- **XCUI** defines desktop/UI structure, widgets, layout, styling, and event/action bindings. XCUI declarations lower into XC declarations and handler functions.
 
-- **C kernel / hardware ABI:** boot handoff, interrupt entry/exit, CPU setup, low-level memory primitives, port/MMIO access, DMA setup, and narrowly scoped hardware operations.
-- **XC:** device-driver policy and state machines, filesystems, networking protocols, system services, package tools, command-line programs, and application logic.
-- **XCUI:** UI trees, layout, theme/style, windows, controls, accessibility labels, and event/action bindings.
-- **Compilation:** XCUI lowers into XC UI declarations and action bindings; XC is type-checked and lowered to generated C or a future direct native backend; the target compiler/linker produces machine code.
+Pipeline: **XCUI → XC → C/native code**. The C backend is a bootstrap implementation detail, not a reason to author higher-level OS subsystems in C.
 
-## Current status
+## Repository naming
 
-This document describes the target architecture, not a claim that all these subsystems already exist. The current XC interpreter supports a small statement set, and the current XCUI parser/runtime is an early implementation. The initial tools/xc/xc_codegen.cpp compiler emits C for the starter subset: program, integer/string let, say, show, add, ask, equality if/else/end, and finish. It is not yet a complete compiler or a driver-capable language.
+- `c-...`: C-only kernel/low-level hardware directories.
+- `xc-...`: XC compiler/runtime/libraries/drivers/services.
+- `xcui-...`: XCUI parser/compiler/runtime.
+- `examples/` and `tests/` are explicitly non-production support directories.
 
-## Compiler pipeline
+The language/platform areas are separated into `xc-language/`, `xc-drivers/`, `xc-services/`, and `xcui-runtime/`. The existing boot/kernel build paths are retained during the migration so the known UEFI path is not broken by a blind mass rename. Moving the existing kernel source into `c-kernel/` is a tracked migration task that must update and validate every build/linker reference before old paths are removed.
 
-1. Parse XC into a syntax tree and report source locations for errors.
-2. Resolve names, types, imports, function signatures, and target capabilities.
-3. Lower XCUI components and events into XC UI declarations and XC action functions.
-4. Lower XC into a target-neutral intermediate representation, with checked arithmetic and explicit memory/ownership rules.
-5. Emit C for the current backend, compile with a freestanding target toolchain where required, and link against the XC runtime and kernel ABI.
-6. Run host unit tests, compiler golden tests, freestanding compile checks, and QEMU integration tests in CI.
+## Current implementation facts
 
-The starter compiler is deliberately a first milestone. The existing interpreter remains available for current examples while the compiled pipeline grows.
+- The UEFI loader and small freestanding kernel exist.
+- The host XC interpreter supports a small starter grammar; it is not yet a complete systems language.
+- An initial XC-to-C generator and smoke tests exist on the feature branch.
+- The existing XCUI renderer is early-stage; event input and action dispatch into XC functions are still incomplete.
+- No complete USB, Wi-Fi, audio, touchpad, storage, or graphics driver suite is claimed.
 
-## Driver model
+## Implementation sequence
 
-An XC driver should be an XC module that registers a device with the kernel through a small C ABI. The ABI should expose opaque handles and bounded operations such as device discovery, MMIO-region mapping, interrupt registration, DMA-buffer allocation, and safe I/O requests. It must not expose arbitrary kernel memory or allow an untrusted driver to write arbitrary physical addresses.
+1. Complete a real lexer, parser, AST, diagnostics, typed functions, control flow, modules/imports, and a checked C bootstrap backend.
+2. Define and test a versioned kernel ABI for memory maps, allocation, logging, interrupts, device resources, and graphics surfaces.
+3. Implement an XC driver registry and service lifecycle with permission-scoped device resources.
+4. Implement XCUI lowering into XC handler declarations and connect mouse/keyboard events to those handlers.
+5. Port subsystems to XC incrementally, with hardware-independent tests and QEMU integration tests.
 
-A driver module should declare device IDs, required capabilities, initialization, interrupt/event handling, reset, and shutdown. The kernel owns privilege, interrupt entry, page tables, and hardware primitives; XC owns protocol logic, queues, state machines, retries, and higher-level device behavior.
-
-## Roadmap
-
-- [x] Define the language-first architecture and boundary.
-- [x] Add an initial XC-to-C compiler for the existing starter syntax.
-- [ ] Add parser/AST, type checking, functions, parameters, return values, loops, modules/imports, and standard-library semantics.
-- [ ] Add a real XCUI-to-XC lowering tool with source maps and diagnostics.
-- [ ] Add XC UI event handlers and bindings that call named XC functions.
-- [ ] Define and version the kernel hardware ABI.
-- [ ] Implement the first XC driver against a mock hardware ABI, with unit tests.
-- [ ] Port device drivers and services incrementally; keep only genuinely low-level primitives in C.
-- [ ] Add freestanding cross-compilation and QEMU tests for compiled XC modules.
+A CI pass only proves the checks that actually ran; it does not establish physical Chromebook compatibility or completed subsystem support.
