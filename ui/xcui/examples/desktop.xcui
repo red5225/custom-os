@@ -1,24 +1,26 @@
-# XCUI desktop layout source. Reorder these button declarations to rearrange apps.
-# Each action name is dispatched by kernel/kernel.c.
+# XCUI desktop layout source.
+# Reorder app buttons here to change the desktop grid.
+# The light theme uses calm neutrals, clear spacing, and one blue accent.
 app "CustomOS Shell" {
-    window "Desktop" background "#0c1220" {
-        column gap 14 padding 28 {
-            text "CUSTOMOS" size 24 color "#ffffff"
-            text "A small, native operating system" size 14 color "#9eafc9"
-            panel "Applications" width 560 background "#172338" {
-                column gap 12 padding 20 {
-                    text "APPS" size 12 color "#75baff"
-                    row gap 12 {
-                        button "Files" action "open_files" height 64
-                        button "Terminal" action "open_terminal" height 64
+    window "Desktop" background "#f5f7fb" {
+        column gap 18 padding 32 {
+            text "CustomOS" size 28 color "#172033"
+            text "A simple desktop for your computer" size 14 color "#667085"
+            panel "Your apps" width 560 background "#ffffff" {
+                column gap 14 padding 22 {
+                    text "PINNED" size 11 color "#64748b"
+                    row gap 14 {
+                        button "Files" action "open_files" height 72
+                        button "Terminal" action "open_terminal" height 72
                     }
-                    row gap 12 {
-                        button "Settings" action "open_settings" height 64
-                        button "Network" action "open_network" height 64
+                    row gap 14 {
+                        button "Settings" action "open_settings" height 72
+                        button "Network" action "open_network" height 72
                     }
+                    text "Choose an app to get started." size 13 color "#667085"
                 }
             }
-            text "Select an app with Tab / arrows, then press Enter" color "#b8c4d8"
+            text "CustomOS  •  Early preview" size 12 color "#98a2b3"
         }
     }
 }
