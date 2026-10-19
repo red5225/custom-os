@@ -306,16 +306,6 @@ static void redraw_with_focus(struct boot_info *b, uint16_t focus) {
         focus_border(b,&xcui_embedded_tree.nodes[focus]);
 }
 
-static int dispatch_keyboard_action(void *context, const char *action) {
-    (void)context;
-    if (!action || !action[0]) return 0;
-    serial_puts("KEYBOARD: activated XCUI action: ");
-    serial_puts(action);
-    serial_puts("\n");
-    /* App/window handlers are not registered yet; never claim an app launched. */
-    return 1;
-}
-
 static void keyboard_desktop_loop(struct boot_info *b) {
     uint16_t focus = XCUI_NO_NODE;
     uint8_t scan, buttons=0, previous_buttons=0;
