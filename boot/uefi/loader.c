@@ -155,7 +155,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
         if (!EFI_ERROR(status)) break;
         if (status != EFI_INVALID_PARAMETER) fail(status, L"ExitBootServices failed");
     }
-    __asm__ __volatile__("mov %0, %%rsp\n\tand $-16, %%rsp\n\txor %%rbp, %%rbp\n\tmov %1, %%rdi\n\tjmp *%2"
+    __asm__ __volatile__("mov %0, %%rsp\n\tand $-16, %%rsp\n\tsub $8, %%rsp\n\txor %%rbp, %%rbp\n\tmov %1, %%rdi\n\tjmp *%2"
                          : : "r"((UINTN)stack_base + STACK_PAGES * 4096 - 16), "r"(boot), "r"((UINTN)entry) : "memory");
     __builtin_unreachable();
 }
