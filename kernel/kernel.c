@@ -143,20 +143,67 @@ static void draw_status(struct boot_info *b) {
     text(b,b->screen_width/12,b->screen_height/5,4,"CUSTOMOS",235,245,255);
     text(b,b->screen_width/12,b->screen_height/5+60,2,"XCUI ERROR",255,110,100);
 }
+static void boot_pause(void) {
+    /* A short bounded delay for readable stage transitions; no timer dependency. */
+    for (volatile uint32_t i=0; i<1800000u; ++i)
+        __asm__ __volatile__("pause");
+}
+
+static int framebuffer_valid(const struct boot_info *b) {
+    if (!b || !b->framebuffer_base) return 0;
+    if (b->screen_width < 320 || b->screen_height < 160 ||
+        b->screen_width > 32767 || b->screen_height > 32767) return 0;
+    if (b->pixels_per_scanline < b->screen_width ||
+        b->pixels_per_scanline > 32767) return 0;
+    if (b->pixel_format != PIXEL_RGB_RESERVED &&
+        b->pixel_format != PIXEL_BGR_RESERVED) return 0;
+    if ((uint64_t)b->pixels_per_scanline * (uint64_t)b->screen_height >
+        UINT64_MAX / 4u) return 0;
+    return 1;
+}
+
+static void show_boot_stage(struct boot_info *b, const char *stage,
+                            uint8_t r, uint8_t g, uint8_t bl) {
+    if (!framebuffer_valid(b)) return;
+    fill(b,8,14,28);
+    text(b,b->screen_width/12,b->screen_height/5,4,"CUSTOMOS",235,245,255);
+    text(b,b->screen_width/12,b->screen_height/5+60,2,stage,r,g,bl);
+}
+
 __attribute__((noreturn)) void kernel_entry(struct boot_info *info) {
     serial_init();
     serial_puts("\nCUSTOMOS: kernel reached\n");
-    if (info && info->magic == BOOT_INFO_MAGIC) {
-        serial_puts("Boot info: valid; UEFI boot services have ended.\n");
-        if (info->framebuffer_base) {
-            serial_puts("Framebuffer: GOP available; drawing kernel status screen.\n");
-            draw_status(info);
-        } else {
-            serial_puts("Framebuffer: unavailable; screen output skipped.\n");
-        }
-    } else {
-        serial_puts("Boot info: invalid.\n");
+    show_boot_stage(info,"KERNEL ONLINE",90,220,150);
+    boot_pause();
+
+    if (!info || info->magic != BOOT_INFO_MAGIC) {
+        serial_puts("BOOT ERROR: invalid or missing boot information; desktop skipped.\n");
+        show_boot_stage(info,"BOOT INFO ERROR",255,90,90);
+        goto halt;
     }
-    serial_puts("Kernel halted safely.\n");
+    serial_puts("BOOT STAGE 1/4: boot information validated.\n");
+    show_boot_stage(info,"CHECKING MEMORY INFO",100,190,255);
+    boot_pause();
+    if (!info->memory_map || !info->descriptor_size ||
+        info->memory_map_size < info->descriptor_size) {
+        serial_puts("BOOT ERROR: memory-map metadata invalid; desktop skipped.\n");
+        show_boot_stage(info,"MEMORY INFO ERROR",255,90,90);
+        goto halt;
+    }
+    serial_puts("BOOT STAGE 2/4: memory-map metadata validated (map not dereferenced).\n");
+    show_boot_stage(info,"CHECKING DISPLAY",100,190,255);
+    boot_pause();
+    if (!framebuffer_valid(info)) {
+        serial_puts("BOOT ERROR: unsupported or invalid framebuffer; desktop skipped.\n");
+        goto halt;
+    }
+    serial_puts("BOOT STAGE 3/4: framebuffer geometry, stride and pixel format validated.\n");
+    show_boot_stage(info,"STARTING XCUI",255,210,100);
+    boot_pause();
+    serial_puts("BOOT STAGE 4/4: launching XCUI renderer.\n");
+    draw_status(info);
+    serial_puts("BOOT COMPLETE: kernel reached safe idle state.\n");
+halt:
+    serial_puts("Kernel halted safely; no keyboard/mouse event loop is implemented yet.\n");
     for (;;) __asm__ __volatile__("cli; hlt");
 }
