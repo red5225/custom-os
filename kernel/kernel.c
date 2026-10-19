@@ -252,17 +252,44 @@ static const char *action_title(const char *action) {
 
 static void show_action_screen(struct boot_info *b, const char *action) {
     const char *title=action_title(action);
-    fill(b,8,14,28);
-    text(b,32,28,3,"CUSTOMOS",235,245,255);
-    text(b,32,90,3,title,70,220,255);
-    text(b,32,145,1,"APP HANDLER NOT IMPLEMENTED YET",255,210,100);
-    text(b,32,170,1,"PRESS ESC TO RETURN TO DESKTOP",190,205,225);
-    serial_puts("UI: opened placeholder screen for action: "); serial_puts(action?action:"(none)"); serial_puts("\n");
+    int is_files=action_is(action,"open_files");
+    int is_settings=action_is(action,"open_settings");
+    int is_terminal=action_is(action,"open_terminal");
+    int is_network=action_is(action,"open_network");
+    fill(b,12,18,31);
+    text(b,32,24,2,"CUSTOMOS  /  DESKTOP",210,222,240);
+    text(b,32,66,3,title,95,190,255);
+    if (is_files) {
+        text(b,32,126,2,"FILES",240,245,255);
+        text(b,32,166,1,"HOME",180,205,235);
+        text(b,32,190,1,"DOCUMENTS",180,205,235);
+        text(b,32,214,1,"DOWNLOADS",180,205,235);
+        text(b,32,250,1,"Storage backend is not mounted yet.",255,205,120);
+    } else if (is_settings) {
+        text(b,32,126,2,"SYSTEM SETTINGS",240,245,255);
+        text(b,32,166,1,"Display: framebuffer mode",180,205,235);
+        text(b,32,190,1,"Input: keyboard polling active",180,205,235);
+        text(b,32,214,1,"Pointer: native trackpad driver unavailable",255,170,130);
+        text(b,32,250,1,"Persistent preferences are not implemented yet.",255,205,120);
+    } else if (is_terminal) {
+        text(b,32,126,2,"XC TERMINAL",240,245,255);
+        text(b,32,166,1,"Built-in command shell is not implemented yet.",255,205,120);
+        text(b,32,190,1,"XC programs currently run in the host test tool.",180,205,235);
+    } else if (is_network) {
+        text(b,32,126,2,"NETWORK STATUS",240,245,255);
+        text(b,32,166,1,"Network adapter: not enumerated",180,205,235);
+        text(b,32,190,1,"TCP/IP stack: not implemented",180,205,235);
+        text(b,32,226,1,"No internet connection is available in this build.",255,205,120);
+    } else {
+        text(b,32,126,2,"APPLICATION",240,245,255);
+        text(b,32,166,1,"No application handler is registered for this action.",255,205,120);
+    }
+    text(b,32,(uint32_t)(b->screen_height>50?b->screen_height-36:140),1,"ESC  -  BACK TO DESKTOP",180,195,220);
+    serial_puts("UI: opened built-in app screen: "); serial_puts(action?action:"(none)"); serial_puts("\n");
     for (;;) {
         uint8_t scan; int extended=0;
         if (keyboard_read_scancode(&scan,&extended)) {
             if (!extended && scan==0x01u) return;
-            if (!extended && scan==0x1Cu) serial_puts("UI: Enter received on placeholder screen.\n");
         } else __asm__ __volatile__("pause");
     }
 }
@@ -387,12 +414,42 @@ static int framebuffer_valid(const struct boot_info *b) {
     return 1;
 }
 
+static void splash_rect(struct boot_info *b, uint32_t x, uint32_t y,
+                        uint32_t w, uint32_t h, uint8_t r, uint8_t g, uint8_t bl) {
+    uint32_t yy, xx;
+    if (!framebuffer_valid(b) || x>=b->screen_width || y>=b->screen_height) return;
+    if (w>b->screen_width-x) w=b->screen_width-x;
+    if (h>b->screen_height-y) h=b->screen_height-y;
+    for (yy=0; yy<h; ++yy)
+        for (xx=0; xx<w; ++xx) pixel(b,x+xx,y+yy,r,g,bl);
+}
+
+static uint32_t boot_progress(const char *stage) {
+    if (action_is(stage,"KERNEL ONLINE")) return 12;
+    if (action_is(stage,"CHECKING MEMORY INFO")) return 34;
+    if (action_is(stage,"CHECKING DISPLAY")) return 57;
+    if (action_is(stage,"STARTING XCUI")) return 82;
+    return 100;
+}
+
 static void show_boot_stage(struct boot_info *b, const char *stage,
                             uint8_t r, uint8_t g, uint8_t bl) {
+    uint32_t width, x, y, i, progress;
+    uint32_t title_len=0, stage_len=0;
+    const char *p;
     if (!framebuffer_valid(b)) return;
+    for (p="CUSTOMOS"; *p; ++p) ++title_len;
+    for (p=stage; p && *p; ++p) ++stage_len;
     fill(b,8,14,28);
-    text(b,b->screen_width/12,b->screen_height/5,4,"CUSTOMOS",235,245,255);
-    text(b,b->screen_width/12,b->screen_height/5+60,2,stage,r,g,bl);
+    width=b->screen_width>440?360:b->screen_width-48;
+    x=(b->screen_width-width)/2;
+    y=b->screen_height/2;
+    text(b,(b->screen_width-title_len*24u)/2,y-74,4,"CUSTOMOS",235,245,255);
+    text(b,(b->screen_width-stage_len*12u)/2,y-20,2,stage,r,g,bl);
+    splash_rect(b,x,y+28,width,5,45,56,73);
+    progress=boot_progress(stage);
+    for (i=0;i<(width*progress)/100u;i++)
+        pixel(b,x+i,y+28,100,190,255);
 }
 
 __attribute__((noreturn)) void kernel_entry(struct boot_info *info) {
