@@ -298,6 +298,38 @@ static void show_action_screen(struct boot_info *b, const char *action) {
     }
 }
 
+/* Cycle focus only through actionable XCUI buttons. */
+static uint16_t find_button(uint16_t current, int direction) {
+    uint16_t count=xcui_embedded_tree.node_count;
+    if (!count) return XCUI_NO_NODE;
+    for (uint16_t step=0; step<count; ++step) {
+        if (current==XCUI_NO_NODE || current>=count) current = direction<0 ? (uint16_t)(count-1u) : 0u;
+        else if (direction<0) current = current==0u ? (uint16_t)(count-1u) : (uint16_t)(current-1u);
+        else current = (uint16_t)((current+1u)%count);
+        if (xcui_embedded_tree.nodes[current].kind==XCUI_BUTTON) return current;
+    }
+    return XCUI_NO_NODE;
+}
+
+/* Render the desktop and outline the focused control using the framebuffer backend. */
+static void redraw_with_focus(struct boot_info *b, uint16_t focus) {
+    struct xcui_backend backend;
+    if (!b || !framebuffer_valid(b)) return;
+    backend.fill_rect=xcui_fill_rect;
+    backend.draw_text=xcui_draw_text;
+    if (!xcui_layout(&xcui_embedded_tree,(int16_t)b->screen_width,(int16_t)b->screen_height)) return;
+    (void)xcui_render(&xcui_embedded_tree,&backend,b);
+    if (focus!=XCUI_NO_NODE && focus<xcui_embedded_tree.node_count) {
+        const struct xcui_node *n=&xcui_embedded_tree.nodes[focus];
+        if (n->kind==XCUI_BUTTON && n->width>0 && n->height>0) {
+            xcui_fill_rect(b,n->x,n->y,n->width,2,0x202938u);
+            xcui_fill_rect(b,n->x,(int16_t)(n->y+n->height-2),n->width,2,0x202938u);
+            xcui_fill_rect(b,n->x,n->y,2,n->height,0x202938u);
+            xcui_fill_rect(b,(int16_t)(n->x+n->width-2),n->y,2,n->height,0x202938u);
+        }
+    }
+}
+
 static void keyboard_desktop_loop(struct boot_info *b) {
     uint16_t focus = XCUI_NO_NODE;
     uint8_t scan, buttons=0, previous_buttons=0;
