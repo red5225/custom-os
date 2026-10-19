@@ -256,35 +256,39 @@ static void show_action_screen(struct boot_info *b, const char *action) {
     int is_settings=action_is(action,"open_settings");
     int is_terminal=action_is(action,"open_terminal");
     int is_network=action_is(action,"open_network");
-    fill(b,12,18,31);
-    text(b,32,24,2,"CUSTOMOS  /  DESKTOP",210,222,240);
-    text(b,32,66,3,title,95,190,255);
+    uint32_t left=28, top=92, content_w=b->screen_width>80?b->screen_width-56:240;
+    fill(b,246,248,252);
+    xcui_fill_rect(b,0,0,(int16_t)b->screen_width,58,0x285bb4u);
+    text(b,24,19,2,"CUSTOMOS",255,255,255);
+    text(b,24,75,2,title,32,41,56);
+    xcui_fill_rect(b,(int16_t)left,(int16_t)top,(int16_t)content_w,
+                   (int16_t)(b->screen_height>top+88?b->screen_height-top-76:100),0xffffffu);
     if (is_files) {
-        text(b,32,126,2,"FILES",240,245,255);
-        text(b,32,166,1,"HOME",180,205,235);
-        text(b,32,190,1,"DOCUMENTS",180,205,235);
-        text(b,32,214,1,"DOWNLOADS",180,205,235);
-        text(b,32,250,1,"Storage backend is not mounted yet.",255,205,120);
+        text(b,left+20,top+20,2,"FILES",40,91,180);
+        text(b,left+20,top+62,1,"HOME",48,59,78);
+        text(b,left+20,top+86,1,"DOCUMENTS",48,59,78);
+        text(b,left+20,top+110,1,"DOWNLOADS",48,59,78);
+        text(b,left+20,top+154,1,"Storage backend is not mounted yet.",166,98,20);
     } else if (is_settings) {
-        text(b,32,126,2,"SYSTEM SETTINGS",240,245,255);
-        text(b,32,166,1,"Display: framebuffer mode",180,205,235);
-        text(b,32,190,1,"Input: keyboard polling active",180,205,235);
-        text(b,32,214,1,"Pointer: native trackpad driver unavailable",255,170,130);
-        text(b,32,250,1,"Persistent preferences are not implemented yet.",255,205,120);
+        text(b,left+20,top+20,2,"SYSTEM SETTINGS",40,91,180);
+        text(b,left+20,top+62,1,"Display: framebuffer mode",48,59,78);
+        text(b,left+20,top+86,1,"Input: keyboard polling active",48,59,78);
+        text(b,left+20,top+110,1,"Pointer: native Chromebook trackpad driver missing",166,70,34);
+        text(b,left+20,top+154,1,"Theme presets are editable; live switching is not implemented.",166,98,20);
     } else if (is_terminal) {
-        text(b,32,126,2,"XC TERMINAL",240,245,255);
-        text(b,32,166,1,"Built-in command shell is not implemented yet.",255,205,120);
-        text(b,32,190,1,"XC programs currently run in the host test tool.",180,205,235);
+        text(b,left+20,top+20,2,"XC TERMINAL",40,91,180);
+        text(b,left+20,top+62,1,"Built-in command shell is not implemented yet.",166,98,20);
+        text(b,left+20,top+86,1,"XC programs currently run in the host test tool.",48,59,78);
     } else if (is_network) {
-        text(b,32,126,2,"NETWORK STATUS",240,245,255);
-        text(b,32,166,1,"Network adapter: not enumerated",180,205,235);
-        text(b,32,190,1,"TCP/IP stack: not implemented",180,205,235);
-        text(b,32,226,1,"No internet connection is available in this build.",255,205,120);
+        text(b,left+20,top+20,2,"NETWORK STATUS",40,91,180);
+        text(b,left+20,top+62,1,"Network adapter: not enumerated",48,59,78);
+        text(b,left+20,top+86,1,"TCP/IP stack: not implemented",48,59,78);
+        text(b,left+20,top+122,1,"Internet is unavailable in this build.",166,98,20);
     } else {
-        text(b,32,126,2,"APPLICATION",240,245,255);
-        text(b,32,166,1,"No application handler is registered for this action.",255,205,120);
+        text(b,left+20,top+20,2,"APPLICATION",40,91,180);
+        text(b,left+20,top+62,1,"No application handler is registered for this action.",166,98,20);
     }
-    text(b,32,(uint32_t)(b->screen_height>50?b->screen_height-36:140),1,"ESC  -  BACK TO DESKTOP",180,195,220);
+    text(b,24,(uint32_t)(b->screen_height>36?b->screen_height-28:140),1,"ESC - BACK TO DESKTOP",104,115,134);
     serial_puts("UI: opened built-in app screen: "); serial_puts(action?action:"(none)"); serial_puts("\n");
     for (;;) {
         uint8_t scan; int extended=0;
@@ -292,45 +296,6 @@ static void show_action_screen(struct boot_info *b, const char *action) {
             if (!extended && scan==0x01u) return;
         } else __asm__ __volatile__("pause");
     }
-}
-
-static void focus_border(struct boot_info *b, const struct xcui_node *n) {
-    int32_t x, y, w, h;
-    if (!b || !n || n->kind != XCUI_BUTTON || n->width <= 0 || n->height <= 0) return;
-    x=n->x; y=n->y; w=n->width; h=n->height;
-    /* Bright cyan outline makes the keyboard focus visible without a mouse. */
-    for (int32_t i=0; i<w; ++i) {
-        if (x+i>=0 && x+i<(int32_t)b->screen_width) {
-            if (y>=0 && y<(int32_t)b->screen_height) pixel(b,(uint32_t)(x+i),(uint32_t)y,70,220,255);
-            if (y+h-1>=0 && y+h-1<(int32_t)b->screen_height) pixel(b,(uint32_t)(x+i),(uint32_t)(y+h-1),70,220,255);
-        }
-    }
-    for (int32_t i=0; i<h; ++i) {
-        if (y+i>=0 && y+i<(int32_t)b->screen_height) {
-            if (x>=0 && x<(int32_t)b->screen_width) pixel(b,(uint32_t)x,(uint32_t)(y+i),70,220,255);
-            if (x+w-1>=0 && x+w-1<(int32_t)b->screen_width) pixel(b,(uint32_t)(x+w-1),(uint32_t)(y+i),70,220,255);
-        }
-    }
-}
-
-static uint16_t find_button(uint16_t start, int direction) {
-    uint16_t i, count=xcui_embedded_tree.node_count;
-    if (count == 0) return XCUI_NO_NODE;
-    if (start >= count) start = direction > 0 ? (uint16_t)(count - 1u) : 0u;
-    for (i=0; i<count; ++i) {
-        if (direction > 0) start = (uint16_t)((start + 1u) % count);
-        else start = (uint16_t)((start == 0u) ? count - 1u : start - 1u);
-        if (xcui_embedded_tree.nodes[start].kind == XCUI_BUTTON &&
-            xcui_embedded_tree.nodes[start].width > 0 &&
-            xcui_embedded_tree.nodes[start].height > 0) return start;
-    }
-    return XCUI_NO_NODE;
-}
-
-static void redraw_with_focus(struct boot_info *b, uint16_t focus) {
-    draw_status(b);
-    if (focus != XCUI_NO_NODE && focus < xcui_embedded_tree.node_count)
-        focus_border(b,&xcui_embedded_tree.nodes[focus]);
 }
 
 static void keyboard_desktop_loop(struct boot_info *b) {

@@ -41,8 +41,8 @@ static void layout_node(struct xcui_tree *tree, uint16_t index) {
 }
 int xcui_layout(struct xcui_tree *t,int16_t w,int16_t h){uint16_t i;if(!t||t->abi_version!=XCUI_ABI_VERSION||w<=0||h<=0)return 0;for(i=0;i<t->node_count;++i){struct xcui_node *n=&t->nodes[i];if(n->parent==XCUI_NO_NODE){n->x=0;n->y=0;if(n->width<=0)n->width=w;if(n->height<=0)n->height=h;layout_node(t,i);}}return 1;}
 int xcui_render(const struct xcui_tree *t,const struct xcui_backend *b,void *ctx){uint16_t i;if(!t||!b||t->abi_version!=XCUI_ABI_VERSION)return 0;for(i=0;i<t->node_count;++i){const struct xcui_node *n=&t->nodes[i];if(n->width<=0||n->height<=0)continue;
-    if((n->kind==XCUI_WINDOW||n->kind==XCUI_SCREEN||n->kind==XCUI_PANEL||n->kind==XCUI_BUTTON)&&b->fill_rect)b->fill_rect(ctx,n->x,n->y,n->width,n->height,n->has_background?n->background:(n->kind==XCUI_BUTTON?0x344966u:0x151b26u));
-    if((n->kind==XCUI_TEXT||n->kind==XCUI_LABEL||n->kind==XCUI_BUTTON)&&n->text[0]&&b->draw_text)b->draw_text(ctx,(int16_t)(n->x+(n->kind==XCUI_BUTTON?8:0)),(int16_t)(n->y+(n->height>(int16_t)n->font_size?(n->height-n->font_size)/2:0)),n->text,n->font_size,n->has_foreground?n->foreground:0xffffffu);
+    if((n->kind==XCUI_WINDOW||n->kind==XCUI_SCREEN||n->kind==XCUI_PANEL||n->kind==XCUI_BUTTON)&&b->fill_rect)b->fill_rect(ctx,n->x,n->y,n->width,n->height,n->has_background?n->background:(n->kind==XCUI_BUTTON?0x285bb4u:0xf6f7fbu));
+    if((n->kind==XCUI_TEXT||n->kind==XCUI_LABEL||n->kind==XCUI_BUTTON)&&n->text[0]&&b->draw_text)b->draw_text(ctx,(int16_t)(n->x+(n->kind==XCUI_BUTTON?8:0)),(int16_t)(n->y+(n->height>(int16_t)n->font_size?(n->height-n->font_size)/2:0)),n->text,n->font_size,n->has_foreground?n->foreground:0x202938u);
     }return 1;}
 uint16_t xcui_hit_test(const struct xcui_tree *t,int16_t x,int16_t y){uint16_t i,found=XCUI_NO_NODE;if(!t)return found;for(i=0;i<t->node_count;++i){const struct xcui_node *n=&t->nodes[i];if(n->kind==XCUI_BUTTON&&x>=n->x&&y>=n->y&&x<n->x+n->width&&y<n->y+n->height)found=i;}return found;}
 const char *xcui_node_action(const struct xcui_tree *t,uint16_t i){if(!t||i>=t->node_count)return "";return t->nodes[i].action;}
