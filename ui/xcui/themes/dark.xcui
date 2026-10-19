@@ -1,0 +1,23 @@
+# CustomOS light theme. Edit colors here; see ui/xcui/THEMES.md.
+app "CustomOS Shell" {
+    window "Desktop" background "#0c1220" {
+        column gap 12 padding 28 {
+            text "CUSTOMOS" size 24 color "#172338" height 42
+            text "A small, native operating system" size 14 color "#b8c4d8" height 30
+            panel "Applications" width 560 background "#ffffff" height 244 {
+                column gap 10 padding 18 {
+                    text "APPS" size 12 color "#75baff" height 24
+                    row gap 12 height 76 {
+                        button "Files" action "open_files" height 64
+                        button "Terminal" action "open_terminal" height 64
+                    }
+                    row gap 12 height 76 {
+                        button "Settings" action "open_settings" height 64
+                        button "Network" action "open_network" height 64
+                    }
+                }
+            }
+            text "Select an app with Tab / arrows, then press Enter" size 12 color "#b8c4d8" height 30
+        }
+    }
+}

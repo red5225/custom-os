@@ -397,7 +397,7 @@ static void keyboard_desktop_loop(struct boot_info *b) {
 
 static void boot_pause(void) {
     /* A short bounded delay for readable stage transitions; no timer dependency. */
-    for (volatile uint32_t i=0; i<1800000u; ++i)
+    for (volatile uint32_t i=0; i<12000000u; ++i)
         __asm__ __volatile__("pause");
 }
 
@@ -434,22 +434,29 @@ static uint32_t boot_progress(const char *stage) {
 
 static void show_boot_stage(struct boot_info *b, const char *stage,
                             uint8_t r, uint8_t g, uint8_t bl) {
-    uint32_t width, x, y, i, progress;
+    uint32_t width, x, y, logo_x, logo_y, i, progress;
     uint32_t title_len=0, stage_len=0;
     const char *p;
     if (!framebuffer_valid(b)) return;
     for (p="CUSTOMOS"; *p; ++p) ++title_len;
     for (p=stage; p && *p; ++p) ++stage_len;
-    fill(b,8,14,28);
+    /* Calm light boot canvas, with a small geometric CustomOS mark. */
+    fill(b,246,248,252);
     width=b->screen_width>440?360:b->screen_width-48;
     x=(b->screen_width-width)/2;
     y=b->screen_height/2;
-    text(b,(b->screen_width-title_len*24u)/2,y-74,4,"CUSTOMOS",235,245,255);
-    text(b,(b->screen_width-stage_len*12u)/2,y-20,2,stage,r,g,bl);
-    splash_rect(b,x,y+28,width,5,45,56,73);
+    logo_x=(b->screen_width-40u)/2u;
+    logo_y=(y>150u)?y-142u:12u;
+    splash_rect(b,logo_x,logo_y,40,40,40,91,180);
+    splash_rect(b,logo_x+7,logo_y+7,26,26,246,248,252);
+    splash_rect(b,logo_x+11,logo_y+11,18,18,40,91,180);
+    splash_rect(b,logo_x+15,logo_y+15,10,10,246,248,252);
+    text(b,(b->screen_width-title_len*24u)/2,y-82,4,"CUSTOMOS",28,38,58);
+    text(b,(b->screen_width-stage_len*12u)/2,y-28,2,stage,r,g,bl);
+    splash_rect(b,x,y+18,width,5,222,227,235);
     progress=boot_progress(stage);
     for (i=0;i<(width*progress)/100u;i++)
-        pixel(b,x+i,y+28,100,190,255);
+        pixel(b,x+i,y+18,40,91,180);
 }
 
 __attribute__((noreturn)) void kernel_entry(struct boot_info *info) {
