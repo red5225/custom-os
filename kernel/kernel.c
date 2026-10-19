@@ -157,7 +157,8 @@ static int keyboard_read_scancode(uint8_t *scan, int *extended) {
     uint8_t status;
     if (!scan || !extended) return 0;
     status = inb(0x64);
-    if ((status & 1u) == 0u) return 0;
+    /* Do not consume auxiliary-device bytes as keyboard scancodes. */
+    if ((status & 1u) == 0u || (status & 0x20u) != 0u) return 0;
     *scan = inb(0x60);
     if (*scan == 0xE0u || *scan == 0xE1u) {
         saw_extended = 1;
@@ -166,6 +167,104 @@ static int keyboard_read_scancode(uint8_t *scan, int *extended) {
     *extended = saw_extended;
     saw_extended = 0;
     return 1;
+}
+
+/* Polling PS/2 auxiliary-device support for emulators and controllers that expose it. */
+static int ps2_wait_input_empty(void) {
+    for (uint32_t i=0; i<100000u; ++i) if ((inb(0x64) & 2u) == 0u) return 1;
+    return 0;
+}
+static int ps2_wait_output_full(void) {
+    for (uint32_t i=0; i<100000u; ++i) if ((inb(0x64) & 1u) != 0u) return 1;
+    return 0;
+}
+static void ps2_command(uint8_t command) {
+    if (ps2_wait_input_empty()) outb(0x64,command);
+}
+static void ps2_data(uint8_t value) {
+    if (ps2_wait_input_empty()) outb(0x60,value);
+}
+static int ps2_mouse_init(void) {
+    /* Enable the auxiliary port, then ask a standard PS/2 mouse to stream packets. */
+    ps2_command(0xA8);
+    ps2_command(0xD4); ps2_data(0xF4);
+    if (ps2_wait_output_full()) {
+        uint8_t status=inb(0x64);
+        uint8_t response=inb(0x60);
+        (void)status;
+        if (response != 0xFAu && response != 0xFEu) return 0;
+        return response == 0xFAu;
+    }
+    return 0;
+}
+static int ps2_mouse_read_packet(int *dx, int *dy, uint8_t *buttons) {
+    static uint8_t packet[3];
+    static unsigned index;
+    uint8_t status=inb(0x64), value;
+    if ((status & 1u)==0u || (status & 0x20u)==0u) return 0;
+    value=inb(0x60);
+    if (index==0u && (value & 0x08u)==0u) return 0; /* packet sync bit */
+    packet[index++]=value;
+    if (index<3u) return 0;
+    index=0;
+    *buttons=(uint8_t)(packet[0]&7u);
+    *dx=(packet[0]&0x10u) ? (int)packet[1]-256 : (int)packet[1];
+    *dy=(packet[0]&0x20u) ? (int)packet[2]-256 : (int)packet[2];
+    /* Overflowed movement is not useful and should not wrap the cursor. */
+    if ((packet[0]&0xC0u)!=0u) { *dx=0; *dy=0; }
+    return 1;
+}
+static void draw_pointer(struct boot_info *b, int x, int y) {
+    if (!b) return;
+    for (int i=0; i<11; ++i) {
+        int xx=x+i/2, yy=y+i;
+        if (xx>=0 && yy>=0 && xx<(int)b->screen_width && yy<(int)b->screen_height)
+            pixel(b,(uint32_t)xx,(uint32_t)yy,255,255,255);
+    }
+    for (int i=0; i<7; ++i) {
+        int xx=x+i, yy=y+i/2;
+        if (xx>=0 && yy>=0 && xx<(int)b->screen_width && yy<(int)b->screen_height)
+            pixel(b,(uint32_t)xx,(uint32_t)yy,40,45,55);
+    }
+}
+static uint16_t button_at(int x, int y) {
+    for (uint16_t i=0; i<xcui_embedded_tree.node_count; ++i) {
+        const struct xcui_node *n=&xcui_embedded_tree.nodes[i];
+        if (n->kind==XCUI_BUTTON && n->width>0 && n->height>0 &&
+            x>=n->x && y>=n->y && x<(int)n->x+n->width && y<(int)n->y+n->height)
+            return i;
+    }
+    return XCUI_NO_NODE;
+}
+static int action_is(const char *action, const char *expected) {
+    size_t i=0;
+    if (!action || !expected) return 0;
+    while (action[i] && expected[i] && action[i]==expected[i]) ++i;
+    return action[i]=='\0' && expected[i]=='\0';
+}
+static const char *action_title(const char *action) {
+    if (action_is(action,"open_files")) return "FILES";
+    if (action_is(action,"open_settings")) return "SETTINGS";
+    if (action_is(action,"open_terminal")) return "TERMINAL";
+    if (action_is(action,"open_network")) return "NETWORK";
+    return "APP";
+}
+
+static void show_action_screen(struct boot_info *b, const char *action) {
+    const char *title=action_title(action);
+    fill(b,8,14,28);
+    text(b,32,28,3,"CUSTOMOS",235,245,255);
+    text(b,32,90,3,title,70,220,255);
+    text(b,32,145,1,"APP HANDLER NOT IMPLEMENTED YET",255,210,100);
+    text(b,32,170,1,"PRESS ESC TO RETURN TO DESKTOP",190,205,225);
+    serial_puts("UI: opened placeholder screen for action: "); serial_puts(action?action:"(none)"); serial_puts("\n");
+    for (;;) {
+        uint8_t scan; int extended=0;
+        if (keyboard_read_scancode(&scan,&extended)) {
+            if (!extended && scan==0x01u) return;
+            if (!extended && scan==0x1Cu) serial_puts("UI: Enter received on placeholder screen.\n");
+        } else __asm__ __volatile__("pause");
+    }
 }
 
 static void focus_border(struct boot_info *b, const struct xcui_node *n) {
@@ -219,39 +318,63 @@ static int dispatch_keyboard_action(void *context, const char *action) {
 
 static void keyboard_desktop_loop(struct boot_info *b) {
     uint16_t focus = XCUI_NO_NODE;
-    uint8_t scan;
-    int extended;
+    uint8_t scan, buttons=0, previous_buttons=0;
+    int extended, mouse_x=(int)b->screen_width/2, mouse_y=(int)b->screen_height/2;
+    int mouse_dx, mouse_dy, mouse_enabled;
     focus = xcui_embedded_tree.node_count ?
         find_button((uint16_t)(xcui_embedded_tree.node_count-1u),1) : XCUI_NO_NODE;
+    mouse_enabled=ps2_mouse_init();
     redraw_with_focus(b,focus);
-    serial_puts("KEYBOARD: arrows move focus; Tab cycles; Enter activates; Esc clears focus.\n");
+    if (mouse_enabled) draw_pointer(b,mouse_x,mouse_y);
+    serial_puts("INPUT: arrows move focus; Tab cycles; Enter opens action feedback; Esc returns/clears focus.\n");
+    serial_puts(mouse_enabled ? "POINTER: PS/2 mouse initialized.\n" : "POINTER: PS/2 auxiliary device unavailable; keyboard remains enabled.\n");
     for (;;) {
+        if (mouse_enabled && ps2_mouse_read_packet(&mouse_dx,&mouse_dy,&buttons)) {
+            mouse_x+=mouse_dx; mouse_y-=mouse_dy;
+            if (mouse_x<0) mouse_x=0;
+            if (mouse_y<0) mouse_y=0;
+            if (mouse_x>=(int)b->screen_width) mouse_x=(int)b->screen_width-1;
+            if (mouse_y>=(int)b->screen_height) mouse_y=(int)b->screen_height-1;
+            if ((buttons&1u)!=0u && (previous_buttons&1u)==0u) {
+                uint16_t hit=button_at(mouse_x,mouse_y);
+                if (hit!=XCUI_NO_NODE) {
+                    focus=hit;
+                    const char *action=xcui_node_action(&xcui_embedded_tree,focus);
+                    redraw_with_focus(b,focus); draw_pointer(b,mouse_x,mouse_y);
+                    if (action && action[0]) show_action_screen(b,action);
+                    redraw_with_focus(b,focus);
+                }
+            }
+            previous_buttons=buttons;
+            redraw_with_focus(b,focus); draw_pointer(b,mouse_x,mouse_y);
+            continue;
+        }
         if (!keyboard_read_scancode(&scan,&extended)) {
             __asm__ __volatile__("pause");
             continue;
         }
-        if (scan & 0x80u) continue; /* Ignore key releases. */
+        if (scan & 0x80u) continue;
         if (extended) {
-            if (scan == 0x48u || scan == 0x4Bu) focus=find_button(focus,-1);
-            else if (scan == 0x50u || scan == 0x4Du) focus=find_button(focus,1);
+            if (scan==0x48u || scan==0x4Bu) focus=find_button(focus,-1);
+            else if (scan==0x50u || scan==0x4Du) focus=find_button(focus,1);
             else continue;
-        } else if (scan == 0x0Fu) { /* Tab */
+        } else if (scan==0x0Fu) {
             focus=find_button(focus,1);
-        } else if (scan == 0x01u) { /* Escape */
+        } else if (scan==0x01u) {
             focus=XCUI_NO_NODE;
-        } else if (scan == 0x1Cu) { /* Enter */
-            if (focus != XCUI_NO_NODE && focus < xcui_embedded_tree.node_count) {
+        } else if (scan==0x1Cu) {
+            if (focus!=XCUI_NO_NODE && focus<xcui_embedded_tree.node_count) {
                 const char *action=xcui_node_action(&xcui_embedded_tree,focus);
-                if (dispatch_keyboard_action(b,action)) {
-                    /* Keep the focus visible after activation. */
-                    serial_puts("KEYBOARD: action handler not connected to an application yet.\n");
-                }
-            }
+                if (action && action[0]) {
+                    show_action_screen(b,action);
+                    redraw_with_focus(b,focus);
+                    if (mouse_enabled) draw_pointer(b,mouse_x,mouse_y);
+                } else serial_puts("INPUT: focused button has no action.\n");
+            } else serial_puts("INPUT: Enter pressed but no button is focused. Press Tab or an arrow key first.\n");
             continue;
-        } else {
-            continue;
-        }
+        } else continue;
         redraw_with_focus(b,focus);
+        if (mouse_enabled) draw_pointer(b,mouse_x,mouse_y);
     }
 }
 
