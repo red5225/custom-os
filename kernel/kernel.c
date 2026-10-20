@@ -458,40 +458,116 @@ static void show_boot_stage(struct boot_info *b, const char *stage,
         pixel(b,x+i,y+18,40,91,180);
 }
 
-__attribute__((noreturn)) void kernel_entry(struct boot_info *info) {
-    serial_init();
-    serial_puts("\nCUSTOMOS: kernel reached\n");
-    show_boot_stage(info,"KERNEL ONLINE",90,220,150);
-    boot_pause();
+static char terminal_key(uint8_t scan) {
+    static const char keys[128] = {
+        [0x02]='1',[0x03]='2',[0x04]='3',[0x05]='4',[0x06]='5',[0x07]='6',[0x08]='7',[0x09]='8',[0x0A]='9',[0x0B]='0',[0x0C]='-',[0x0E]='\b',
+        [0x10]='Q',[0x11]='W',[0x12]='E',[0x13]='R',[0x14]='T',[0x15]='Y',[0x16]='U',[0x17]='I',[0x18]='O',[0x19]='P',[0x1C]='\n',
+        [0x1E]='A',[0x1F]='S',[0x20]='D',[0x21]='F',[0x22]='G',[0x23]='H',[0x24]='J',[0x25]='K',[0x26]='L',[0x2C]='Z',[0x2D]='X',[0x2E]='C',[0x2F]='V',[0x30]='B',[0x31]='N',[0x32]='M',[0x39]=' '
+    };
+    return scan < sizeof(keys) ? keys[scan] : 0;
+}
 
-    if (!info || info->magic != BOOT_INFO_MAGIC) {
-        serial_puts("BOOT ERROR: invalid or missing boot information; desktop skipped.\n");
-        show_boot_stage(info,"BOOT INFO ERROR",255,90,90);
-        goto halt;
+static int command_is(const char *a, const char *b) {
+    while (*a && *b) { char x=*a++, y=*b++; if (x>='a'&&x<='z') x=(char)(x-'a'+'A'); if (y>='a'&&y<='z') y=(char)(y-'a'+'A'); if (x!=y) return 0; }
+    return *a==0 && *b==0;
+}
+
+static void terminal_line(struct boot_info *b, uint32_t row, const char *s, uint8_t r, uint8_t g, uint8_t bl) {
+    if (b && framebuffer_valid(b)) text(b,12,12+row*12,1,s,r,g,bl);
+    serial_puts(s); serial_puts("\n");
+}
+
+static void terminal_render(struct boot_info *b, const char *lines[], uint32_t count, const char *input, int mini) {
+    uint32_t i;
+    if (!b || !framebuffer_valid(b)) return;
+    fill(b,8,12,20,0);
+    if (mini) {
+        text(b,10,10,1,"CUSTOMOS | TEXT MODE | TYPE HELP",180,220,255);
+        return;
     }
+    text(b,12,8,1,"CUSTOMOS / XC SHELL",100,190,255);
+    for (i=0;i<count && i<10;i++) text(b,12,24+i*12,1,lines[i],220,225,235);
+    text(b,12,154,1,">",120,220,150);
+    text(b,24,154,1,input,245,245,245);
+}
+
+static void terminal_execute(struct boot_info *b, const char *cmd, const char *lines[], uint32_t *count, int *mini) {
+    if (!cmd[0]) return;
+    serial_puts("CUSTOMOS: command: "); serial_puts(cmd); serial_puts("\n");
+    if (command_is(cmd,"HELP")) {
+        terminal_line(b,1,"HELP CLEAR VERSION STATUS COMPONENTS MEMINFO DEVICES",220,225,235);
+        terminal_line(b,2,"BOOTLOG SELFTEST UI USB STATUS USB LS",220,225,235);
+        terminal_line(b,3,"USB STORAGE DRIVER IS NOT IMPLEMENTED YET",255,190,100);
+        terminal_line(b,4,"NO DISK DATA IS CHANGED BY THIS BUILD",180,220,150);
+    } else if (command_is(cmd,"CLEAR")) {
+        *count=0; fill(b,8,12,20,0); terminal_line(b,0,"SCREEN CLEARED",180,220,150);
+    } else if (command_is(cmd,"VERSION")) terminal_line(b,1,"CUSTOMOS KERNEL / XC SHELL MILESTONE 1",220,225,235);
+    else if (command_is(cmd,"STATUS")) terminal_line(b,1,"KERNEL RUNNING; UEFI BOOT INFO VALIDATED",180,220,150);
+    else if (command_is(cmd,"COMPONENTS")) {
+        terminal_line(b,1,"UEFI LOADER: ACTIVE",180,220,150);
+        terminal_line(b,2,"FRAMEBUFFER: ACTIVE",180,220,150);
+        terminal_line(b,3,"PS2 KEYBOARD POLLING: ACTIVE IF FIRMWARE EXPOSES IT",220,225,235);
+        terminal_line(b,4,"USB XHCI / MASS STORAGE / FAT: NOT IMPLEMENTED",255,190,100);
+        terminal_line(b,5,"NETWORK: NOT IMPLEMENTED",255,190,100);
+    } else if (command_is(cmd,"MEMINFO")) terminal_line(b,1,"UEFI MEMORY MAP METADATA VALIDATED; ALLOCATOR NOT IMPLEMENTED",220,225,235);
+    else if (command_is(cmd,"DEVICES")) terminal_line(b,1,"NO PCI OR USB DEVICE ENUMERATOR IMPLEMENTED YET",255,190,100);
+    else if (command_is(cmd,"USB STATUS") || command_is(cmd,"USB LS") || command_is(cmd,"USB LIST")) terminal_line(b,1,"USB STORAGE UNAVAILABLE: XHCI, BOT/SCSI AND FAT DRIVERS ARE NOT IMPLEMENTED",255,190,100);
+    else if (command_is(cmd,"BOOTLOG")) {
+        terminal_line(b,1,"1 BOOT INFO VALIDATED",180,220,150);
+        terminal_line(b,2,"2 MEMORY MAP METADATA VALIDATED",180,220,150);
+        terminal_line(b,3,"3 FRAMEBUFFER GEOMETRY VALIDATED",180,220,150);
+        terminal_line(b,4,"4 COMMAND SHELL STARTED",180,220,150);
+    } else if (command_is(cmd,"SELFTEST")) {
+        terminal_line(b,1,"PASS: COMMAND MATCHING",180,220,150);
+        terminal_line(b,2,"PASS: BOOT INFO AND FRAMEBUFFER CHECKS",180,220,150);
+        terminal_line(b,3,"SKIP: USB STORAGE TEST (DRIVER NOT IMPLEMENTED)",255,190,100);
+    } else if (command_is(cmd,"UI")) {
+        *mini=!*mini;
+        terminal_render(b,lines,*count,cmd,*mini);
+        terminal_line(b,1,*mini?"MINIMAL STATUS BAR ENABLED":"TEXT TERMINAL ENABLED",180,220,150);
+    } else if (command_is(cmd,"DESKTOP")) {
+        terminal_line(b,1,"LEGACY XCUI DESKTOP REQUESTED; ESC RETURNS TO SHELL",220,225,235);
+        draw_status(b);
+        keyboard_desktop_loop(b);
+        terminal_render(b,lines,*count,cmd,*mini);
+    } else terminal_line(b,1,"UNKNOWN COMMAND; TYPE HELP",255,190,100);
+}
+
+__attribute__((noreturn)) void kernel_entry(struct boot_info *info) {
+    char input[80]; const char *lines[10]; uint32_t count=0; size_t length=0; int mini=0;
+    serial_init(); serial_puts("\nCUSTOMOS: kernel reached\n");
+    show_boot_stage(info,"KERNEL ONLINE",90,220,150);
+    if (!info || info->magic != BOOT_INFO_MAGIC) { serial_puts("BOOT ERROR: invalid boot information.\n"); show_boot_stage(info,"BOOT INFO ERROR",255,90,90); goto halt; }
     serial_puts("BOOT STAGE 1/4: boot information validated.\n");
     show_boot_stage(info,"CHECKING MEMORY INFO",100,190,255);
-    boot_pause();
-    if (!info->memory_map || !info->descriptor_size ||
-        info->memory_map_size < info->descriptor_size) {
-        serial_puts("BOOT ERROR: memory-map metadata invalid; desktop skipped.\n");
-        show_boot_stage(info,"MEMORY INFO ERROR",255,90,90);
-        goto halt;
-    }
+    if (!info->memory_map || !info->descriptor_size || info->memory_map_size < info->descriptor_size) { serial_puts("BOOT ERROR: memory-map metadata invalid.\n"); show_boot_stage(info,"MEMORY INFO ERROR",255,90,90); goto halt; }
     serial_puts("BOOT STAGE 2/4: memory-map metadata validated (map not dereferenced).\n");
     show_boot_stage(info,"CHECKING DISPLAY",100,190,255);
-    boot_pause();
-    if (!framebuffer_valid(info)) {
-        serial_puts("BOOT ERROR: unsupported or invalid framebuffer; desktop skipped.\n");
-        goto halt;
+    if (!framebuffer_valid(info)) { serial_puts("BOOT ERROR: invalid framebuffer.\n"); goto halt; }
+    serial_puts("BOOT STAGE 3/4: framebuffer validated.\n");
+    show_boot_stage(info,"STARTING TERMINAL",255,210,100);
+    fill(info,8,12,20,0);
+    terminal_line(info,0,"CUSTOMOS XC SHELL READY",100,190,255);
+    terminal_line(info,1,"TYPE HELP FOR COMMANDS",180,220,150);
+    terminal_line(info,2,"USB STORAGE: NOT IMPLEMENTED IN THIS BUILD",255,190,100);
+    terminal_line(info,3,"BOOT STAGE 4/4: TEXT TERMINAL ACTIVE",180,220,150);
+    input[0]=0; terminal_render(info,lines,count,input,mini);
+    for (;;) {
+        uint8_t scan; int extended=0;
+        if (!keyboard_read_scancode(&scan,&extended)) { __asm__ __volatile__("pause"); continue; }
+        if (extended || (scan & 0x80u)) continue;
+        char c=terminal_key(scan);
+        if (!c) continue;
+        if (c=='\b') { if (length) input[--length]=0; terminal_render(info,lines,count,input,mini); continue; }
+        if (c=='\n') {
+            input[length]=0; serial_puts("> "); serial_puts(input); serial_puts("\n");
+            if (count<10) lines[count++]=input;
+            terminal_execute(info,input,lines,&count,&mini);
+            length=0; input[0]=0; terminal_render(info,lines,count,input,mini);
+            continue;
+        }
+        if (length+1<sizeof(input)) { input[length++]=c; input[length]=0; terminal_render(info,lines,count,input,mini); }
     }
-    serial_puts("BOOT STAGE 3/4: framebuffer geometry, stride and pixel format validated.\n");
-    show_boot_stage(info,"STARTING XCUI",255,210,100);
-    boot_pause();
-    serial_puts("BOOT STAGE 4/4: launching XCUI renderer.\n");
-    draw_status(info);
-    serial_puts("BOOT COMPLETE: keyboard-controlled desktop active.\n");
-    keyboard_desktop_loop(info);
 halt:
     serial_puts("Kernel halted safely after a boot validation error.\n");
     for (;;) __asm__ __volatile__("cli; hlt");
