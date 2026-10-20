@@ -31,7 +31,9 @@ $(BUILD)/loader.so: $(BUILD)/loader.o
 	$(LD) -nostdlib -znocombreloc -T $(EFI_LDS) /usr/lib/crt0-efi-x86_64.o -shared -Bsymbolic -L$(EFI_LIBDIR) -L$(EFI_GNUEFI_LIBDIR) $< -lefi -lgnuefi -o $@
 
 $(BUILD)/BOOTX64.EFI: $(BUILD)/loader.so
-	$(OBJCOPY) -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym -j .rel -j .rela -j .reloc --target=efi-app-x86_64 --subsystem=10 $< $@
+	file $<
+	readelf -h $<
+	$(OBJCOPY) -I elf64-x86-64 -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym -j .rel -j .rela -j .reloc --target=efi-app-x86_64 --subsystem=10 $< $@
 	file $@
 	objdump -p $@ | head -40
 	file $@ | grep -Eq "PE32\+ executable.*EFI application|PE32\+ executable.*EFI" || { echo "Invalid EFI executable format"; exit 1; }
