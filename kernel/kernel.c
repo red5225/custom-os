@@ -480,7 +480,7 @@ static void terminal_line(struct boot_info *b, uint32_t row, const char *s, uint
 static void terminal_render(struct boot_info *b, const char *lines[], uint32_t count, const char *input, int mini) {
     uint32_t i;
     if (!b || !framebuffer_valid(b)) return;
-    fill(b,8,12,20,0);
+    fill(b,8,12,20);
     if (mini) {
         text(b,10,10,1,"CUSTOMOS | TEXT MODE | TYPE HELP",180,220,255);
         return;
@@ -500,7 +500,7 @@ static void terminal_execute(struct boot_info *b, const char *cmd, const char *l
         terminal_line(b,3,"USB STORAGE DRIVER IS NOT IMPLEMENTED YET",255,190,100);
         terminal_line(b,4,"NO DISK DATA IS CHANGED BY THIS BUILD",180,220,150);
     } else if (command_is(cmd,"CLEAR")) {
-        *count=0; fill(b,8,12,20,0); terminal_line(b,0,"SCREEN CLEARED",180,220,150);
+        *count=0; fill(b,8,12,20); terminal_line(b,0,"SCREEN CLEARED",180,220,150);
     } else if (command_is(cmd,"VERSION")) terminal_line(b,1,"CUSTOMOS KERNEL / XC SHELL MILESTONE 1",220,225,235);
     else if (command_is(cmd,"STATUS")) terminal_line(b,1,"KERNEL RUNNING; UEFI BOOT INFO VALIDATED",180,220,150);
     else if (command_is(cmd,"COMPONENTS")) {
@@ -546,7 +546,8 @@ __attribute__((noreturn)) void kernel_entry(struct boot_info *info) {
     if (!framebuffer_valid(info)) { serial_puts("BOOT ERROR: invalid framebuffer.\n"); goto halt; }
     serial_puts("BOOT STAGE 3/4: framebuffer validated.\n");
     show_boot_stage(info,"STARTING TERMINAL",255,210,100);
-    fill(info,8,12,20,0);
+    boot_pause();
+    fill(info,8,12,20);
     terminal_line(info,0,"CUSTOMOS XC SHELL READY",100,190,255);
     terminal_line(info,1,"TYPE HELP FOR COMMANDS",180,220,150);
     terminal_line(info,2,"USB STORAGE: NOT IMPLEMENTED IN THIS BUILD",255,190,100);
